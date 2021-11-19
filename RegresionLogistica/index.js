@@ -1,6 +1,6 @@
 require('@tensorflow/tfjs-node');
 const loadJSON = require('./load-training-json');
-const LinearRegression = require('./linear-regression');
+const LogisticRegression = require('./logistic-regression');
 // const plot = require('node-remote-plot');
 
 const jsonFileName = 'reunion_formatted.json';
@@ -10,7 +10,7 @@ let { features, labels, testFeatures, testLabels } = loadJSON('./data/' + jsonFi
     splitTest: 50
 });
 
-const regression = new LinearRegression(features, labels, {
+const regression = new LogisticRegression(features, labels, {
     learningRate: 0.1,
     iterations: 3,
     batchSize: 10  // With batchsize of 1 it turns into StochasticGradientDescent
@@ -19,7 +19,7 @@ const regression = new LinearRegression(features, labels, {
 regression.train();
 const R2 = regression.test(testFeatures, testLabels);
 
-alert("R2: ", R2);
+console.log("R2: ", R2);
 
 // plot({
 //     x: regression.mseHistory.reverse(),

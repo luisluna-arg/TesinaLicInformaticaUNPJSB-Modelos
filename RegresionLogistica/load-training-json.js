@@ -27,16 +27,16 @@ module.exports = function loadJSON(
 
   let labels = [];
   let features = [
-    [] /* attention */
-    , [] /* meditation */
-    , [] /* delta */
-    , [] /* theta */
-    , [] /* lowAlpha */
-    , [] /* highAlpha */
-    , [] /* lowBeta */
-    , [] /* highBeta */
-    , [] /* lowGamma */
-    , [] /* highGamma */
+    /* attention */
+    /* meditation */
+    /* delta */
+    /* theta */
+    /* lowAlpha */
+    /* highAlpha */
+    /* lowBeta */
+    /* highBeta */
+    /* lowGamma */
+    /* highGamma */
   ];
 
   /* Filter no lecture records */
@@ -51,36 +51,34 @@ module.exports = function loadJSON(
   dataIndexes.forEach(index => {
     let record = localData[index];
 
-    let recordIX = 0;
-
-    features[recordIX++].push(record.eSense.attention);
-    features[recordIX++].push(record.eSense.meditation);
-
-    features[recordIX++].push(record.eegPower.delta);
-    features[recordIX++].push(record.eegPower.theta);
-
-    features[recordIX++].push(record.eegPower.lowAlpha);
-    features[recordIX++].push(record.eegPower.highAlpha);
-
-    features[recordIX++].push(record.eegPower.lowBeta);
-    features[recordIX++].push(record.eegPower.highBeta);
-
-    features[recordIX++].push(record.eegPower.lowGamma);
-    features[recordIX++].push(record.eegPower.highGamma);
+    features.push([
+      record.eSense.attention,
+      record.eSense.meditation,
+      record.eegPower.delta,
+      record.eegPower.theta,
+      record.eegPower.lowAlpha,
+      record.eegPower.highAlpha,
+      record.eegPower.lowBeta,
+      record.eegPower.highBeta,
+      record.eegPower.lowGamma,
+      record.eegPower.highGamma
+    ]);
 
     let deltaTheta = record.eegPower.delta + record.eegPower.theta;
     let alpha = record.eegPower.lowAlpha + record.eegPower.highAlpha;
     let beta = record.eegPower.lowBeta + record.eegPower.highBeta;
     let gamma = record.eegPower.lowGamma + record.eegPower.highGamma;
 
-    let values = _.orderBy([
+    let currentLabel = _.orderBy([
       [waveType.DELTA_THETA, deltaTheta],
       [waveType.ALPHA, alpha],
       [waveType.BETA, beta],
       [waveType.GAMMA, gamma],
-    ], o => o[1]).pop();
+    ], o => o[1])[0];
 
-    labels.push(labelNames[values[0]]);
+    let labelArray = [0, 0, 0, 0];
+    labelArray[currentLabel[0]] = 1;
+    labels.push(labelArray);
   });
 
   if (splitTest) {
@@ -88,21 +86,14 @@ module.exports = function loadJSON(
       ? splitTest
       : Math.floor(data.length / 2);
 
-    let splittedFeatures = [];
-    let splittedTestFeatures = [];
-    for (let i = 0; i < features.length; i++) {
-      splittedTestFeatures.push(features[i].slice(0, trainSize));
-      splittedFeatures.push(features[i].slice(trainSize));
-    }
-
     return {
-      features: splittedFeatures,
+      features: features.slice(trainSize),
       labels: labels.slice(trainSize),
-      testFeatures: splittedTestFeatures,
+      testFeatures: features.slice(0, trainSize),
       testLabels: labels.slice(0, trainSize)
     };
   } else {
-    return { features: features, labels };
+    return { features, labels };
   }
 };
 
