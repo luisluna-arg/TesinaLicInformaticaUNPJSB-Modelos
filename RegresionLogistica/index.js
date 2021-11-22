@@ -1,11 +1,11 @@
 require('@tensorflow/tfjs-node');
 const loadJSON = require('./load-training-json');
 const LogisticRegression = require('./logistic-regression');
-// const plot = require('node-remote-plot');
+const _ = require('lodash');
 
 const jsonFileName = 'reunion_formatted.json';
 
-let { features, labels, testFeatures, testLabels } = loadJSON('./data/' + jsonFileName, {
+let { features, labels, testFeatures, testLabels, scaledData, combinedData } = loadJSON('./data/' + jsonFileName, {
     shuffle: true,
     splitTest: 50
 });
@@ -13,38 +13,28 @@ let { features, labels, testFeatures, testLabels } = loadJSON('./data/' + jsonFi
 const regression = new LogisticRegression(features, labels, {
     learningRate: 0.1,
     iterations: 3,
-    batchSize: 10  // With batchsize of 1 it turns into StochasticGradientDescent
+    batchSize: 40  // With batchsize of 1 it turns into StochasticGradientDescent
 });
 
+// console.log("labels", labels);
+// console.log("testLabels", testLabels);
+
 regression.train();
-const R2 = regression.test(testFeatures, testLabels);
+const precision = regression.test(testFeatures, testLabels);
+console.log("Precisión: ", precision);
 
-console.log("R2: ", R2);
+console.log("Predicción");
 
-// plot({
-//     x: regression.mseHistory.reverse(),
-//     xLabel: 'Iteration #',
-//     yLabel: 'Mean Squared Error',
-//     name: 'plotMSE'
-// }).then(function () {
-//     plot({
-//         x: regression.bHistory,
-//         y: regression.mseHistory.reverse(),
-//         xLabel: 'Value of B',
-//         yLabel: 'Mean Squared Error',
-//         name: 'plotMSEvsB'
-//     })
-// });
+const sampleToPredict = 15;
+const featuresToPredict = _.slice(features, 0, sampleToPredict);
+// const scaledDataToPredict = _.slice(scaledData, 0, sampleToPredict);
+// const labelsToPredict = _.slice(labels, 0, sampleToPredict);
 
-regression.predict([
-    [50], /* attention */
-    [51],  /* meditation */
-    [1582550], /* delta */
-    [25431], /* theta */
-    [5550], /* lowAlpha */
-    [3759], /* highAlpha */
-    [2067], /* lowBeta */
-    [1922], /* highBeta */
-    [457], /* lowGamma */
-    [54222] /* highGamma */
-]).print();
+// console.log("featuresToPredict", featuresToPredict);
+// console.log("scaledDataToPredict", scaledDataToPredict);
+// console.log("labelsToPredict", labelsToPredict);
+
+regression.predict(
+    /* attention, meditation, delta, theta, lowAlpha, highAlpha, lowBeta, highBeta, lowGamma, highGamma */
+    featuresToPredict
+).print();

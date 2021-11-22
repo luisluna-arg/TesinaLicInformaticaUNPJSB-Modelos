@@ -1,6 +1,7 @@
 const fs = require('fs');
 const shuffleSeed = require('shuffle-seed');
 const _ = require('lodash');
+const tf = require('@tensorflow/tfjs');
 
 module.exports = function loadJSON(
   filename,
@@ -26,6 +27,8 @@ module.exports = function loadJSON(
   labelNames[waveType.GAMMA] = "BOTTOM";
 
   let labels = [];
+  let scaledData = [];
+  let combinedData = [];
   let features = [
     /* attention */
     /* meditation */
@@ -48,6 +51,9 @@ module.exports = function loadJSON(
     dataIndexes => shuffleSeed.shuffle(dataIndexes, 'phrase');
   }
 
+  let minValues = [0, 0, 0, 0];
+  let maxValues = [0, 0, 0, 0];
+
   dataIndexes.forEach(index => {
     let record = localData[index];
 
@@ -64,17 +70,45 @@ module.exports = function loadJSON(
       record.eegPower.highGamma
     ]);
 
-    let deltaTheta = record.eegPower.delta + record.eegPower.theta;
-    let alpha = record.eegPower.lowAlpha + record.eegPower.highAlpha;
-    let beta = record.eegPower.lowBeta + record.eegPower.highBeta;
-    let gamma = record.eegPower.lowGamma + record.eegPower.highGamma;
+    let localCombinedData = [
+      record.eegPower.delta + record.eegPower.theta,
+      record.eegPower.lowAlpha + record.eegPower.highAlpha,
+      record.eegPower.lowBeta + record.eegPower.highBeta,
+      record.eegPower.lowGamma + record.eegPower.highGamma
+    ];
+
+    for (let index = 0; index < 4; index++) {
+      if (localCombinedData[index] < minValues[index]) minValues[index] = localCombinedData[index];
+      if (localCombinedData[index] > maxValues[index]) maxValues[index] = localCombinedData[index];
+    }
+
+    combinedData.push(localCombinedData);
+  });
+
+  /*
+  * Normalize values
+  * Normalization formula: normalize_value = (value − min_value) / (max_value − min_value)
+  */
+  dataIndexes.forEach(index => {
+    let localScaled = [];
+
+    let localCombinedData = combinedData[index];
+    for (let i = 0; i < 4; i++) {
+      let minValue = minValues[i];
+      let maxValue = maxValues[i];
+      let value = localCombinedData[i];
+      let difMaxMin = maxValue - minValue;
+      localScaled[i] = difMaxMin > 0 ? ((value - minValue) / (difMaxMin)) : 0;
+    }
+
+    scaledData.push(localScaled);
 
     let currentLabel = _.orderBy([
-      [waveType.DELTA_THETA, deltaTheta],
-      [waveType.ALPHA, alpha],
-      [waveType.BETA, beta],
-      [waveType.GAMMA, gamma],
-    ], o => o[1])[0];
+      [waveType.DELTA_THETA, localScaled[0]],
+      [waveType.ALPHA, localScaled[1]],
+      [waveType.BETA, localScaled[2]],
+      [waveType.GAMMA, localScaled[3]],
+    ], o => o[1]).reverse()[0];
 
     let labelArray = [0, 0, 0, 0];
     labelArray[currentLabel[0]] = 1;
@@ -90,19 +124,11 @@ module.exports = function loadJSON(
       features: features.slice(trainSize),
       labels: labels.slice(trainSize),
       testFeatures: features.slice(0, trainSize),
-      testLabels: labels.slice(0, trainSize)
+      testLabels: labels.slice(0, trainSize),
+      combinedData,
+      scaledData
     };
   } else {
     return { features, labels };
   }
 };
-
-
-//   function standarize(features) {
-//     const { mean, variance } = tf.moments(features, 0);
-//     this.mean = mean;
-//     this.variance = variance;
-//     return features.sub(mean).div(variance.pow(0.5));
-//   }
-//   labels = tf.tensor(labels);
-//   splitted = tf.tensor(splitted);

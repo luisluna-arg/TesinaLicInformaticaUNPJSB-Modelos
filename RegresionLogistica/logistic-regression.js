@@ -1,12 +1,11 @@
 const tf = require('@tensorflow/tfjs');
-const { result } = require('lodash');
 const _ = require('lodash');
 
 class LogisticRegression {
     constructor(features, labels, options) {
         this.features = this.processFeatures(features);
         this.labels = tf.tensor(labels);
-        this.costHistory = []; // Cross-Entropy values
+        this.costHistory = [];
         this.learningRateHistory = [];
 
         this.options = Object.assign({
@@ -17,7 +16,7 @@ class LogisticRegression {
         }, options);
 
         let rowCount = this.features.shape[1];
-        let columnCount = 4; /* How many labels are they */
+        let columnCount = 4; /* How many classes are there */
         this.weights = tf.zeros([rowCount, columnCount]);
 
         this.learningRateHistory.push(this.options.learningRate);
@@ -36,7 +35,7 @@ class LogisticRegression {
         for (let i = 0; i < this.options.iterations; i++) {
             for (let j = 0; j < batchQuantity; j++) {
                 const { batchSize } = this.options;
-                const startIndex = j  * batchSize;
+                const startIndex = j * batchSize;
                 const featureSlice = this.features.slice([startIndex, 0], [batchSize, -1]);
                 const labelSlice = this.labels.slice([startIndex, 0], [batchSize, -1]);
                 this.gradientDescent(featureSlice, labelSlice);
@@ -50,19 +49,18 @@ class LogisticRegression {
         const predictions = this.predict(testFeatures);
         testLabels = tf.tensor(testLabels);
         const incorrect = predictions.sub(testLabels).abs().sum().get();
-        return (predictions.shape[0] - incorrect) / predictions.shape[0];
+        const itemCount = predictions.shape[0];
+        return (itemCount - incorrect) / predictions.shape[0] * 100;
     }
 
     processFeatures(features) {
         features = tf.tensor(features);
-
         if (this.mean && this.variance) {
             features = features.sub(this.mean).div(this.variance.pow(0.5));
         }
         else {
             features = this.standarize(features);
         }
-
         features = tf.ones([features.shape[0], 1]).concat(features, 1);
         return features;
     }
@@ -71,14 +69,14 @@ class LogisticRegression {
         const { mean, variance } = tf.moments(features, 0);
         this.mean = mean;
         this.variance = variance;
-        return features.sub(mean).div(variance.pow(0.5));
+        return features.sub(this.mean).div(this.variance.pow(0.5));
     }
 
     recordCost() {
         const guesses = this.features.matMul(this.weights).sigmoid();
         const termOne = this.labels.transpose().matMul(guesses.log());
         const termTwo = this.labels.mul(-1).add(1).transpose().matMul(guesses.mul(-1).add(1).log());
-        const cost  = termOne.add(termTwo).div(this.features.shape[0]).mul(-1).get(0, 0);
+        const cost = termOne.add(termTwo).div(this.features.shape[0]).mul(-1).get(0, 0);
         this.costHistory.unshift(cost);
     }
 
@@ -93,7 +91,8 @@ class LogisticRegression {
     predict(observations) {
         return this.processFeatures(observations).
             matMul(this.weights).
-            sigmoid().
+            //sigmoid().
+            softmax().
             greater(this.options.decisionBoundary).
             cast('float32');
     }
