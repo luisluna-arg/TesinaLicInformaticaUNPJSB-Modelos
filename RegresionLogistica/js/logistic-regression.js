@@ -2,6 +2,7 @@ const tf = require('@tensorflow/tfjs');
 const _ = require('lodash');
 
 class LogisticRegression {
+    
     constructor(features, labels, options) {
         this.features = this.processFeatures(features);
         this.labels = tf.tensor(labels);
@@ -47,8 +48,8 @@ class LogisticRegression {
 
     test(testFeatures, testLabels) {
         const predictions = this.predict(testFeatures);
-        testLabels = tf.tensor(testLabels);
-        const incorrect = predictions.sub(testLabels).abs().sum().get();
+        let testLabelsTensor = tf.tensor(testLabels);
+        const incorrect = predictions.sub(testLabelsTensor).abs().sum().dataSync()[0];
         const itemCount = predictions.shape[0];
         return (itemCount - incorrect) / predictions.shape[0] * 100;
     }
@@ -76,7 +77,10 @@ class LogisticRegression {
         const guesses = this.features.matMul(this.weights).sigmoid();
         const termOne = this.labels.transpose().matMul(guesses.log());
         const termTwo = this.labels.mul(-1).add(1).transpose().matMul(guesses.mul(-1).add(1).log());
-        const cost = termOne.add(termTwo).div(this.features.shape[0]).mul(-1).get(0, 0);
+        let termThree = termOne.add(termTwo).div(this.features.shape[0]).mul(-1);
+        let termThree_array = termThree.arraySync();
+        const cost = termThree_array[0][0]//;.get(0, 0);
+        console.log(termThree_array);
         this.costHistory.unshift(cost);
     }
 
