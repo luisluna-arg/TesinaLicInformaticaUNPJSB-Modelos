@@ -20,6 +20,8 @@ class LogisticRegression {
             verbose: false
         }, options);
 
+        baseFeatures = this.normalize(baseFeatures);
+
         this.features = this.processFeatures(baseFeatures);
         this.labels = tf.tensor(baseLabels);
         this.costHistory = []; // Cross-Entropy values
@@ -116,6 +118,15 @@ class LogisticRegression {
 
         const incorrect = predictionIndexTensor.notEqual(labelIndexTensor).sum().dataSync()[0];
         return (predictionIndexTensor.shape[0] - incorrect) / predictionIndexTensor.shape[0];
+    }
+
+    normalize(featuresToNormalize) {
+        let tansposedFeatures = tf.tensor(featuresToNormalize).transpose().arraySync();
+        for (let i = 0; i < tansposedFeatures.length; i++) {
+            tansposedFeatures[i] = tf.tensor(tansposedFeatures[i]).log().dataSync();
+        }
+        tansposedFeatures = tf.tensor(tansposedFeatures).transpose().arraySync();
+        return tansposedFeatures;
     }
 
     standarize(featuresToTreat) {

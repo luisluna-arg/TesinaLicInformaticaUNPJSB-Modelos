@@ -52,20 +52,9 @@ class LogisticRegression {
         // console.log("this.labels.shape[1]", this.labels.shape);
 
         /* Define model layers */
-        const classCount = this.labels.shape[1];
-        let layers = [
-            tf.layers.dense({
-                inputShape: this.features.shape[1], units: 256, 
-                activation: 'relu'
-                // , kernelInitializer: 'zeros'
-            }),
-            tf.layers.dropout({ rate: 0.25 }),
-            tf.layers.dense({ units: 128, activation: 'relu' }),
-            tf.layers.dropout({ rate: 0.25 }),
-            tf.layers.dense({ units: this.labels.shape[1], activation: 'softmax' }),
-        ];
-
-        this.model = tf.sequential({ layers: layers });
+        const x = tf.input({shape: this.features.shape[1]});
+        const y = tf.layers.dense({units: this.labels.shape[1], activation: 'softmax'}).apply(x);
+        this.model = tf.model({inputs: x, outputs: y});
 
         if (this.options.verbose) {
             this.model.summary();
@@ -73,6 +62,8 @@ class LogisticRegression {
     }
 
     async train(trainEndCallback) {
+        console.log("training");
+
         this.model.compile(this.compileSettings);
 
         return await this.model.fit(this.features, this.labels, {

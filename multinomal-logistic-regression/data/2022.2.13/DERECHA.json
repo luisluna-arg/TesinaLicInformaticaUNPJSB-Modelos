@@ -1,5 +1,5 @@
 [
-{"ts":"2022-02-13T15:08:01.697Z","eSense":{"attention":0,"meditation":0},"eegPower":{"delta":243263,"theta":4103,"lowAlpha":1063,"highAlpha":1696,"lowBeta":2867,"highBeta":795,"lowGamma":302,"highGamma":1913},"poorSignalLevel":0},
+    {"ts":"2022-02-13T15:08:01.697Z","eSense":{"attention":0,"meditation":0},"eegPower":{"delta":243263,"theta":4103,"lowAlpha":1063,"highAlpha":1696,"lowBeta":2867,"highBeta":795,"lowGamma":302,"highGamma":1913},"poorSignalLevel":0},
 {"ts":"2022-02-13T15:08:02.669Z","eSense":{"attention":0,"meditation":0},"eegPower":{"delta":638903,"theta":248451,"lowAlpha":113506,"highAlpha":83956,"lowBeta":44638,"highBeta":70662,"lowGamma":6238,"highGamma":10646},"poorSignalLevel":0},
 {"ts":"2022-02-13T15:08:03.664Z","eSense":{"attention":50,"meditation":16},"eegPower":{"delta":650094,"theta":25601,"lowAlpha":26206,"highAlpha":7117,"lowBeta":11213,"highBeta":12213,"lowGamma":1598,"highGamma":10687},"poorSignalLevel":0},
 {"ts":"2022-02-13T15:08:04.670Z","eSense":{"attention":47,"meditation":3},"eegPower":{"delta":54681,"theta":36954,"lowAlpha":451,"highAlpha":3493,"lowBeta":2332,"highBeta":5180,"lowGamma":1163,"highGamma":6904},"poorSignalLevel":0},
