@@ -3,9 +3,9 @@ const tf = require('@tensorflow/tfjs-node');
 const _ = require('lodash');
 
 class LogisticRegression {
-    constructor(baseFeatures, baseLabels, options) {
-        if (typeof baseFeatures == 'undefined' || baseFeatures == null || baseFeatures.length == 0) {
-            throw 'Coleccion features no valida';
+    constructor(baseSamples, baseLabels, options) {
+        if (typeof baseSamples == 'undefined' || baseSamples == null || baseSamples.length == 0) {
+            throw 'Coleccion de muestras no valida';
         }
 
         if (typeof baseLabels == 'undefined' || baseLabels == null || baseLabels.length == 0) {
@@ -14,54 +14,62 @@ class LogisticRegression {
 
         this.options = Object.assign({
             learningRate: 0.5,
-            iterations: 1000,
-            batchSize: 50000,
-            decisionBoundary: 0.5,
+            iterations: 100,
+            batchSize: 5000,
             verbose: false
         }, options);
 
-        baseFeatures = this.normalize(baseFeatures);
-
-        this.features = this.processFeatures(baseFeatures);
+        this.samples = this.processSamples(baseSamples);
         this.labels = tf.tensor(baseLabels);
-        this.costHistory = []; // Cross-Entropy values
 
-        this.weights = tf.zeros([this.features.shape[1], this.labels.shape[1]]);
+        this.costHistory = []; // Cross-Entropy values
+        this.weights = tf.ones([this.samples.shape[1], this.labels.shape[1]]);
+
+        console.log("samples.length", this.samples.shape[0]);
     }
 
-    processFeatures(featuresToProcess) {
-        let featuresTensor = tf.tensor(featuresToProcess);
+    processSamples(samplesToProcess) {
+        let samplesTensor = tf.tensor(samplesToProcess);
 
         if (!(this.mean && this.variance)) {
-            this.standarize(featuresTensor);
+            this.setMeanAndVariance(samplesTensor);
         }
+        samplesTensor = this.standarize(samplesTensor);
+        return samplesTensor;
+    }
 
-        featuresTensor = featuresTensor.sub(this.mean).div(this.variance.pow(0.5));
-        featuresTensor = tf.ones([featuresTensor.shape[0], 1]).concat(featuresTensor, 1);
-
-        return featuresTensor;
+    standarize(samplesTensor) {
+        let currentSamples = samplesTensor.sub(this.mean).div(this.variance.pow(0.5));
+        return tf.ones([currentSamples.shape[0], 1]).concat(currentSamples, 1);
     }
 
     train() {
-        const batchQuantity = Math.floor(this.features.shape[0] / this.options.batchSize);
+        let batchCount = Math.floor(this.samples.shape[0] / this.options.batchSize);
+        if (batchCount == 0) batchCount = 1;
+
+        let localBatchSize = this.options.batchSize > this.samples.shape[0] ? this.samples.shape[0] : this.options.batchSize;
 
         for (let i = 0; i < this.options.iterations; i++) {
-            for (let j = 0; j < batchQuantity; j++) {
-                const { batchSize } = this.options;
-                const startIndex = j * batchSize;
+            for (let j = 0; j < batchCount; j++) {
+                const startIndex = j * localBatchSize;
 
-                const featureSlice = this.features.slice([startIndex, 0], [batchSize, -1]);
-                const labelSlice = this.labels.slice([startIndex, 0], [batchSize, -1]);
+                let featureSlice = this.samples.slice([startIndex, 0], [localBatchSize, -1]);
+                let labelSlice = this.labels.slice([startIndex, 0], [localBatchSize, -1]);
 
                 this.gradientDescent(featureSlice, labelSlice);
+
+                featureSlice.dispose();
+                labelSlice.dispose();
             }
             this.recordCost();
             this.updateLearningRate();
         }
+
+        console.log("Training complete");
     }
 
-    gradientDescent(featuresToTreat, labelsToTreat) {
-        let currentGuesses = featuresToTreat.matMul(this.weights);
+    gradientDescent(samplesToTreat, labelsToTreat) {
+        let currentGuesses = samplesToTreat.matMul(this.weights);
         if (!this.options.useReLu) {
             currentGuesses = currentGuesses.softmax();
         }
@@ -70,12 +78,16 @@ class LogisticRegression {
         }
 
         const differences = currentGuesses.sub(labelsToTreat);
-        const slopes = featuresToTreat.transpose().matMul(differences).div(featuresToTreat.shape[0]);
+        const slopes = samplesToTreat.transpose().matMul(differences).div(samplesToTreat.shape[0]);
         this.weights = this.weights.sub(slopes.mul(this.options.learningRate));
+
+        currentGuesses.dispose();
+        differences.dispose();
+        slopes.dispose();
     }
 
     recordCost() {
-        let currentGuesses = this.features.matMul(this.weights);
+        let currentGuesses = this.samples.matMul(this.weights);
         if (!this.options.useReLu) {
             currentGuesses = currentGuesses.softmax();
         }
@@ -84,8 +96,13 @@ class LogisticRegression {
         }
         const termOne = this.labels.transpose().matMul(currentGuesses.log());
         const termTwo = this.labels.mul(-1).add(1).transpose().matMul(currentGuesses.mul(-1).add(1).log());
-        const cost = termOne.add(termTwo).div(this.features.shape[0]).mul(-1).dataSync()[0];
-        this.costHistory.unshift(cost);
+        const termThree = termOne.add(termTwo).div(this.samples.shape[0]).mul(-1);
+        this.costHistory.unshift(termThree.dataSync()[0]);
+
+        currentGuesses.dispose();
+        termOne.dispose();
+        termTwo.dispose();
+        termThree.dispose();
     }
 
     updateLearningRate() {
@@ -100,6 +117,7 @@ class LogisticRegression {
     }
 
     test(testFeatures, testLabels) {
+        let incorrect, predictionCount;
         let testLabelsTensor = tf.tensor(testLabels);
         let labelIndexTensor = testLabelsTensor.argMax(1);
         const predictionTensor = this.predict(testFeatures);
@@ -108,20 +126,41 @@ class LogisticRegression {
         if (this.options.verbose) {
             console.log("Comparacion resultados");
             console.log("Esperado (ABAJO, ARRIBA, DERECHA, IZQUIERDA)");
-            testLabelsTensor.print();
+            console.log(testLabelsTensor.arraySync());
             console.log("Predicho (ABAJO, ARRIBA, DERECHA, IZQUIERDA)");
+            console.log(predictionTensor.arraySync());
         }
 
-        if (this.options.verbose) {
-            predictionTensor.print();
-        }
+        incorrect = predictionIndexTensor.notEqual(labelIndexTensor).sum().dataSync()[0];
+        predictionCount = predictionIndexTensor.shape[0];
 
-        const incorrect = predictionIndexTensor.notEqual(labelIndexTensor).sum().dataSync()[0];
-        return (predictionIndexTensor.shape[0] - incorrect) / predictionIndexTensor.shape[0];
+        return (predictionCount - incorrect) / predictionCount;
     }
 
-    normalize(featuresToNormalize) {
-        let tansposedFeatures = tf.tensor(featuresToNormalize).transpose().arraySync();
+    normalize(samplesToNormalize) {
+        let tansposedFeatures = tf.tensor(samplesToNormalize).transpose().arraySync();
+        for (let i = 0; i < tansposedFeatures.length; i++) {
+            let currentSample = tansposedFeatures[i];
+
+            let temporalTensor = tf.tensor(currentSample);
+
+            const inputMax = temporalTensor.max();
+            const inputMin = temporalTensor.min();
+            if (inputMax.sub(inputMin).dataSync() != 0) {
+                tansposedFeatures[i] = temporalTensor.sub(inputMin).div(inputMax.sub(inputMin)).dataSync();
+            }
+            else {
+                tansposedFeatures[i] = temporalTensor.dataSync();
+            }
+
+        }
+        tansposedFeatures = tf.tensor(tansposedFeatures).transpose().arraySync();
+
+        return tansposedFeatures;
+    }
+
+    normalize2(samplesToNormalize) {
+        let tansposedFeatures = tf.tensor(samplesToNormalize).transpose().arraySync();
         for (let i = 0; i < tansposedFeatures.length; i++) {
             tansposedFeatures[i] = tf.tensor(tansposedFeatures[i]).log().dataSync();
         }
@@ -129,21 +168,20 @@ class LogisticRegression {
         return tansposedFeatures;
     }
 
-    standarize(featuresToTreat) {
-        const { mean, variance } = tf.moments(featuresToTreat, 0);
+    setMeanAndVariance(samplesToTreat) {
+        const { mean, variance } = tf.moments(samplesToTreat, 0);
         this.mean = mean;
         this.variance = variance;
     }
 
-    predict(featuresToPredict) {
+    predict(samplesToPredict) {
         /* Multiplica las feature por pesos, aplica Softmax para escalar, detecta el valor activado 
         *  y transforma a arreglo de resultado
         */
-        let partialResults = this.processFeatures(featuresToPredict).matMul(this.weights);
-
-        let majorValueIndexTensor = (
-                this.options.useReLu ? partialResults.relu() : partialResults.softmax()
-            ).argMax(1);
+        let processedSamples = this.processSamples(samplesToPredict);
+        let weightedSamples = processedSamples.matMul(this.weights);
+        let partialResults = (this.options.useReLu ? weightedSamples.relu() : weightedSamples.softmax());
+        let majorValueIndexTensor = partialResults.argMax(1);
 
         /* Create the label array */
         let resultData = majorValueIndexTensor.dataSync();
@@ -154,7 +192,19 @@ class LogisticRegression {
             dataForTensor.push(result);
         }
 
+        processedSamples.dispose();
+        weightedSamples.dispose();
+        partialResults.dispose();
+        majorValueIndexTensor.dispose();
+
         return tf.tensor(dataForTensor);
+    }
+
+    summary() {
+        console.log("costHistory", this.costHistory);
+        console.log("weights", this.weights.arraySync());
+        console.log("mean", this.mean.dataSync());
+        console.log("variance", this.variance.dataSync());
     }
 
 }

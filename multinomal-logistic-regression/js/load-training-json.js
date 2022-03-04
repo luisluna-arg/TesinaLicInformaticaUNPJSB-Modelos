@@ -1,5 +1,7 @@
+const tf = require('@tensorflow/tfjs-node');
 const fs = require('fs');
 const _ = require('lodash');
+const SMOTE = require('smote');
 
 const MOVE_TYPE = {
   NONE: 0,
@@ -18,15 +20,15 @@ const MOVE_TYPE = {
 function loadJSON(fileData, settings) {
 
   const localSettings = Object.assign({
-    shuffle: false, 
-    tolerance: 1,
-    split: false
+    shuffle: false,
+    minTolerance: 0,
+    split: false,
+    dataAugmentation: false,
+    dataAugmentationTotal: 25000,
   }, settings);
 
   /* Maximos: Para validar la tolerancia de las lecturas */
   const dataMax = {
-    attention: 0,
-    meditation: 0,
     delta: 0,
     theta: 0,
     lowAlpha: 0,
@@ -49,8 +51,6 @@ function loadJSON(fileData, settings) {
       map((record) => {
         /* Crea el objeto de datos */
         let dataItem = {
-          attention: record.eSense.attention,
-          meditation: record.eSense.meditation,
           delta: record.eegPower.delta,
           theta: record.eegPower.theta,
           lowAlpha: record.eegPower.lowAlpha,
@@ -83,14 +83,18 @@ function loadJSON(fileData, settings) {
     dataMax
   };
 
-  if (localSettings.split){
+  if (localSettings.dataAugmentation) {
+    readData = dataAugmentation(readData, localSettings);
+  }
+
+  if (localSettings.split) {
     return splitData(readData, localSettings);
   }
   else {
     return readData;
   }
 
-  
+
 }
 
 /**
@@ -102,22 +106,20 @@ function loadJSON(fileData, settings) {
  */
 function splitData(data, settings) {
   const localSettings = Object.assign({
-    shuffle: false, 
-    tolerance: 1
+    shuffle: false,
+    minTolerance: 0,
   }, settings);
 
   // Step 1. Shuffle the data
-  let samples = data.samples;
-  if (localSettings.shuffle) { samples = _.shuffle(samples); }
+  let dataSamples = data.samples;
+  if (localSettings.shuffle) { dataSamples = _.shuffle(dataSamples); }
 
-  // Step 2. Split into features and labels
-  const features = [];
-  const labels = [];
+  // Step 2. Split into samples and labels
+  const finalSamples = [];
+  const finalLabels = [];
 
-  _.each(samples, (dataItem) => {
+  _.each(dataSamples, (dataItem) => {
     let regularSample = [
-      dataItem.attention,
-      dataItem.meditation,
       dataItem.delta,
       dataItem.theta,
       dataItem.lowAlpha,
@@ -136,20 +138,100 @@ function splitData(data, settings) {
     *  para descartar la muestra
     */
     for (var property in dataItem) {
-      if (data.dataMax[property] > 0 && dataItem[property] / data.dataMax[property] > localSettings.tolerance) {
-        features.push(regularSample);
-        labels.push([dataItem.down, dataItem.up, dataItem.right, dataItem.left]);
+      let propertyMax = data.dataMax[property];
+      let propertyValue = dataItem[property];
+      if (propertyMax > 0 && propertyValue / propertyMax > localSettings.minTolerance
+      ) {
+        finalSamples.push(regularSample);
+        finalLabels.push([dataItem.down, dataItem.up, dataItem.right, dataItem.left]);
+
         break;
       }
     }
   });
 
   return {
-    features,
-    labels
+    samples: finalSamples,
+    labels: finalLabels
   };
 }
 
+function dataAugmentation(readData, settings) {
+
+  // Here we generate 5 synthetic data points to bolster our training data with an balance an imbalanced data set.
+  const countToGenerate = settings.dataAugmentationTotal - readData.samples.length;
+
+  if (countToGenerate <= 0) return readData;
+
+  let vectorizedSamples = readData.samples.map((dataItem) => {
+    let result = [
+      dataItem.delta,
+      dataItem.theta,
+      dataItem.lowAlpha,
+      dataItem.highAlpha,
+      dataItem.lowBeta,
+      dataItem.highBeta,
+      dataItem.lowGamma,
+      dataItem.highGamma,
+      /* Tipo movimiento */
+      dataItem.down,
+      dataItem.up,
+      dataItem.right,
+      dataItem.left
+    ];
+
+    return result;
+  });
+
+
+  // Pass in your real data vectors.
+  const smote = new SMOTE(vectorizedSamples);
+
+  let newVectors;
+
+  tf.tidy(() => {
+    newVectors = smote.generate(countToGenerate).
+      map(vector => {
+        let maxIx = vector.length - 4;
+        let features = vector.slice(0, maxIx).map(o => Math.floor(o));
+        let activatedLabelIndex = tf.tensor(vector.slice(maxIx)).softmax().argMax().dataSync();
+        let resultLabels = [0, 0, 0, 0];
+        resultLabels[activatedLabelIndex] = 1;
+
+        let propIndex = 0;
+        let labelIndex = 0;
+
+        let dataItem = {
+          delta: Math.floor(features[propIndex++]),
+          theta: Math.floor(features[propIndex++]),
+          lowAlpha: Math.floor(features[propIndex++]),
+          highAlpha: Math.floor(features[propIndex++]),
+          lowBeta: Math.floor(features[propIndex++]),
+          highBeta: Math.floor(features[propIndex++]),
+          lowGamma: Math.floor(features[propIndex++]),
+          highGamma: Math.floor(features[propIndex++]),
+          /* Tipo movimiento */
+          down: Math.floor(resultLabels[labelIndex++]),
+          up: Math.floor(resultLabels[labelIndex++]),
+          right: Math.floor(resultLabels[labelIndex++]),
+          left: Math.floor(resultLabels[labelIndex++])
+        };
+
+
+        /* Actualiza maximo encontrado */
+        for (let property in dataItem) {
+          if (readData.hasOwnProperty(property) && readData[property] < readData[property])
+            readData.dataMax[property] = dataItem[property];
+        }
+
+        return dataItem;
+      });
+  });
+
+  readData.samples = readData.samples.concat(newVectors);
+
+  return readData
+}
 
 /* ****************************************************** */
 /* ****************************************************** */
