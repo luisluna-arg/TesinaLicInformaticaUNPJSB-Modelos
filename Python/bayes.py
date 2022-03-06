@@ -1,8 +1,10 @@
+import math
 import numpy as np
 from scipy.sparse import coo_matrix
 from sklearn.utils import shuffle
 from sklearn.naive_bayes import MultinomialNB
-from load_files import load_files
+# from load_files import load_files
+from load_csv_files import read_file
 
 ###############################################################
 ###############################################################
@@ -30,65 +32,61 @@ def normalization(data):
 ###############################################################
 ###############################################################
 
-columns, data = load_files()
-
-# samples_sparse = coo_matrix(data)
-
-data = shuffle(data)
-
-samples = list()
-labels = list()
-
-for currentData in data: 
-    sample = list()
-    features = currentData[0: len(currentData) - 2]
-    label = currentData[len(currentData) - 1]
-    samples.append(features)
-    labels.append(label)
-
-
-samples = normalization(np.array(samples))
-
-print("samples")
-print(samples)
+columns, samples = read_file()
+loop_count = 30
+tests = list()
+scores = list()
 
 
 
+data_np = np.array(samples)
+np.random.shuffle(data_np)
 
+# Separar
+row_count = data_np.shape[0]
+column_count = data_np.shape[1]
 
+samples = data_np[0:row_count, 1:column_count-1]
+labels = data_np[0:row_count, 0:1]
 
-total_count = len(samples)
-testing_count = 10
-training_count = total_count - testing_count
+test_size = math.floor(row_count * 0.3)
+train_count = row_count - test_size
+test_count = row_count - train_count
+feature_count = samples.shape[1]
 
-training_samples = samples[0 : training_count - 1] 
-training_labels = labels[0 : training_count - 1] 
-testing_samples = samples[training_count - 1 : total_count] 
-testing_labels = labels[training_count - 1 : total_count] 
+# Entrenamiento y etiquetas
+train_samples = samples[0:train_count, 0:feature_count]
+train_labels = labels[0:train_count]
 
-label_count = len(testing_labels)
+test_samples = samples[train_count:row_count, 0:feature_count]
+test_labels = labels[train_count:row_count].flatten()
+
+# Entrenamiento
+X = train_samples
+Y = train_labels
 
 rng = np.random.RandomState(1)
 clf = MultinomialNB()
-clf.fit(training_samples, training_labels)
+clf.fit(X, Y)
 
-print('')
-print('training_samples')
-print(training_samples[0])
-print('')
-print('testing_labels')
-print(testing_labels)
-print('')
-print('predictions')
-prediction = clf.predict(testing_samples).flatten()
-print(prediction)
-print('')
+single_score = clf.score(X, Y)
+scores.append(single_score)
 
-correct = 0
-for idx, val in enumerate(prediction):
-    correct += 1 if prediction[idx] == testing_labels[idx] else 0
 
-correct_porcent = round(correct / len(testing_labels) * 100, 2)
+predictions = clf.predict(test_samples).flatten()
 
-print("aciertos {0} de {1}, {2}%".format(correct, label_count, correct_porcent))
-print('')
+asserts = 0
+for ix, item in enumerate(predictions):
+    if test_labels[ix] == item:
+        asserts += 1
+
+if asserts == 0:
+    # tests.append(0)
+    print("test_size", test_size, "| Precisión", 0, "| Score", single_score)
+else:
+    precision = asserts / predictions.shape[0] * 100
+    # tests.append(precision)
+    print("test_size", test_size, "| Precisión", precision, "| Score", single_score)
+
+# print("aciertos {0} de {1}, {2}%".format(asserts, label_count, correct_porcent))
+# print('')
