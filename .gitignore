@@ -4,3 +4,4 @@ JavaScript/js/load-training-json_old.js
 JavaScript/js/fft_test.js
 Python/__pycache__/
 RegresionLogistica/js/load-training-json.bk.js
+IGNORE_*.*

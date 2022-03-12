@@ -35,9 +35,8 @@ class NaiveBayes {
             ],
             objectConverter: this.defaultObjectConverter,
             verbose: false,
-            normalize: true
+            normalize: false
         }, options);
-
 
         this.trainingLabels = trainingLabels;
 
@@ -74,28 +73,14 @@ class NaiveBayes {
         return result;
     }
 
-    getLabelToken(labelArray) {
-        let labelToken = null;
-        for (let i = 0; i < labelArray.length && labelToken == null; i++) {
-            if (labelArray[i] > 0)
-                labelToken = this.options.MoveTypeTokens[i + 1];
-        }
+    getLabelToken(labelValue) {
+        let labelToken = this.options.MoveTypeTokens[labelValue];
 
         if (typeof labelToken == 'undefined' || labelToken == null) {
             labelToken = this.options.MoveTypeTokens[0];
         }
 
         return labelToken;
-    }
-
-    getLabelArray(labelToken) {
-        let labelArray = new Array(this.options.MoveTypeTokens.length - 1).fill(0);
-
-        for (let i = 0; i < labelArray.length; i++) {
-            labelArray[i] = (this.options.MoveTypeTokens[i + 1] == labelToken) ? 1 : 0;
-        }
-
-        return labelArray;
     }
 
     initializeLabel(label) {
@@ -179,10 +164,11 @@ class NaiveBayes {
                     maxProbability = logProbability;
                     chosenLabel = label;
                 }
-            })
+            });
 
-        let labelArray = this.getLabelArray(chosenLabel);
-        return labelArray;
+        let prediction = this.options.MoveTypeEnum[chosenLabel];
+
+        return prediction;
     }
 
     featureProbability(feature, label) {
