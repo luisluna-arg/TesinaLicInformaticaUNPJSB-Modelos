@@ -56,22 +56,28 @@ def fix_fft(data_points):
     number_of_datapoints = len(data_points)
 
     complex_fft = fft(data_points)
-    real_absolute_fft = 2.0 / number_of_datapoints * \
-                        np.abs(complex_fft[:number_of_datapoints//2])
+
+    real_absolute_fft = 2.0 / number_of_datapoints * np.abs(complex_fft)
 
     result = list()
     for val in real_absolute_fft:
         result.append(float("{:.8f}".format(val)))
 
-    return np.array(result)
+    arrayResult = np.array(result)
+
+    print("arrayResult[0]", arrayResult[0], "arrayResult.shape", len(arrayResult), "number_of_datapoints", number_of_datapoints)
+    print("arrayResult[0]", arrayResult[len(arrayResult)-1], "arrayResult.shape", len(arrayResult), "number_of_datapoints", number_of_datapoints)
+
+    return arrayResult
 
 def apply_fft(data):
     data_points = np.array(data, dtype=float)
 
     sample_count = data_points.shape[0]
     column_count = data_points.shape[1]
-    indexes = range(0, column_count - 1)
+    indexes = range(0, column_count)
     result = np.empty((sample_count, column_count), float)
+    print("indexes", indexes)
     for ix in indexes:
         temp_array = data[0:sample_count, ix:ix+1].flatten()
 
@@ -83,6 +89,9 @@ def apply_fft(data):
                 result[normal_ix, ix] = sample
         else: 
             fft_array = fix_fft(temp_array)
+
+            # print("fft_array")
+            # print(np.where(fft_array > 1))
             # print ("ix", ix)
             # print ("temp_array", temp_array)
             # print ("fft_array", fft_array)

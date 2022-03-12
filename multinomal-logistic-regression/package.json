@@ -12,6 +12,7 @@
     "@tensorflow/tfjs-node": "^3.13.0",
     "arrayify-merge.s": "^0.1.2",
     "axios": "^0.26.0",
+    "fft-js": "^0.0.12",
     "inspect-stream": "^0.1.0",
     "json-2-csv": "^3.17.0",
     "lodash": "^4.17.21",

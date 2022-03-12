@@ -52,8 +52,8 @@ const { LogisticRegression } = (() => {
     }
 })();
 
-const fileBasePath = './data/generated';
-// const fileBasePath = './data/Full';
+//const fileBasePath = './data/generated';
+const fileBasePath = './data/Full';
 //const fileBasePath = './data/2022.2.22';
 
 const filesToLoad = [
@@ -63,25 +63,29 @@ const filesToLoad = [
     { file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }
 ];
 
-let loadedData = loadJSON(filesToLoad, { 
-    shuffle: false, split: false, dataAugmentation: false,
-    dataAugmentationTotal: 50000
-});
+let loadingSettings = { 
+    shuffle: false, 
+    split: false,
+    dataAugmentation: true,
+    dataAugmentationTotal: 50000,
+    minTolerance: 0.0 /* 0 para que traiga todo */
+};
+
+let loadedData = loadJSON(filesToLoad, loadingSettings);
+
+/* ************************************************************** */
 
 console.log("");
 console.log("Testings");
 console.log("========");
 console.log("");
 
-
-// const batchSize = 0.5; /* Porcentaje del tamaño de la muestra */
-
 const regressionSettingsCoreModel = {
-    learningRate: 0.5, //0.5, 
+    learningRate: 0.5,
     iterations: 2000,
-    batchSize: 20000,//Math.floor(loadedData.samples.length * batchSize),
+    batchSize: 20000,
     useReLu: false,
-    shuffle: false,
+    shuffle: !loadingSettings.shuffle,
     verbose: true
 };
 
@@ -90,8 +94,9 @@ const regressionSettingsLayerModel = {
     iterations: 800,
     batchSize: 10000,//Math.floor(loadedData.samples.length * batchSize),
     useReLu: false,
-    shuffle: false,
-    verbose: true
+    shuffle: !loadingSettings.shuffle,
+    verbose: true,
+    normalize: false
 };
 
 const naiveBayesSettings = {
@@ -101,16 +106,11 @@ const naiveBayesSettings = {
     useReLu: false
 };
 
-const splitDataSettings = {
-    shuffle: true,
-    minTolerance: 0.0
-};
-
 const testPercentage = 2;
 const trainingExerciseCount = 1;
 
 // console.log("Regression Settings (Core): " + JSON.stringify(regressionSettingsCoreModel));
-console.log("Split Data Settings: " + JSON.stringify(splitDataSettings));
+console.log("Split Data Settings: " + JSON.stringify(loadingSettings));
 console.log("");
 
 let promises = [];
@@ -119,19 +119,13 @@ let testings = [];
 console.log("Inicio", new Date());
 
 for (let i = 0; i < trainingExerciseCount; i++) {
-    let { samples, labels } = splitData(loadedData, splitDataSettings);
+    let { samples, labels } = splitData(loadedData, loadingSettings);
 
-    // regressionSettings.batchSize = Math.floor(samples.length * batchSize);
-
-    // const trainingLength = samples.length - (samples.length * testPercentage / 100);
     const trainingLength = samples.length - 20;
-
     const trainingData = samples.slice(0, trainingLength);
     const trainingLabels = labels.slice(0, trainingLength);
-
     const testData = samples.slice(trainingLength);
     const testLabels = labels.slice(trainingLength);
-
 
     switch  (ModelType) {
         case methods.TF_LAYERMODEL: {

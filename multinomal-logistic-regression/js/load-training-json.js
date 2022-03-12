@@ -2,6 +2,11 @@ const tf = require('@tensorflow/tfjs-node');
 const fs = require('fs');
 const _ = require('lodash');
 const SMOTE = require('smote');
+const { preProcess } = require('./data-preprocessing');
+
+/* ****************************************************** */
+/* ****************************************************** */
+/* ****************************************************** */
 
 const MOVE_TYPE = {
   NONE: 0,
@@ -11,11 +16,32 @@ const MOVE_TYPE = {
   RIGHT: 4
 };
 
+/* ****************************************************** */
+
+/**
+ * Calcula los valores maximos para una coleccion de muestras, por columnas
+ * @param {*} samples Muestras a analizar
+ * @returns Arreglo de maximos de igual dimension que las muestras analizadas
+ */
+function calculateDataMaxes(samples) {
+  let columnCount = samples[0].length;
+  let maxes = new Array(columnCount-1).fill(0);
+
+  for (let i = 0; i < samples.length; i++) {
+    const currentSample = samples[i];
+    for (let j = 0; j < columnCount - 1; j++) {
+      if (maxes[j] < currentSample[j]) maxes[j] = currentSample[j];
+    }
+  }
+
+  return maxes;
+}
+
 /**
  * Lee archivos pasados por parametro para luego convertirlos en objectos manejables y etiquetados
- * @param {*} fileData 
- * @param {*} Settings
- * @returns 
+ * @param fileData Datos leídos de archivos
+ * @param settings Settings generales para carga de archivo
+ * @returns Datos leídos. Separados en features y labels según settings.
  */
 function loadJSON(fileData, settings) {
 
@@ -24,20 +50,13 @@ function loadJSON(fileData, settings) {
     minTolerance: 0,
     split: false,
     dataAugmentation: false,
-    dataAugmentationTotal: 25000,
+    applyFFT: true,
+    dataAugmentationTotal: 1000,
   }, settings);
 
   /* Maximos: Para validar la tolerancia de las lecturas */
-  const dataMax = {
-    delta: 0,
-    theta: 0,
-    lowAlpha: 0,
-    highAlpha: 0,
-    lowBeta: 0,
-    highBeta: 0,
-    lowGamma: 0,
-    highGamma: 0,
-  };
+  const dataMax = [];
+  dataMax.fill(0, 0, 8);
 
   let samples = [];
   _.each(fileData, (fileSettings) => {
@@ -50,26 +69,22 @@ function loadJSON(fileData, settings) {
       filter(o => o.poorSignalLevel == 0).
       map((record) => {
         /* Crea el objeto de datos */
-        let dataItem = {
-          delta: record.eegPower.delta,
-          theta: record.eegPower.theta,
-          lowAlpha: record.eegPower.lowAlpha,
-          highAlpha: record.eegPower.highAlpha,
-          lowBeta: record.eegPower.lowBeta,
-          highBeta: record.eegPower.highBeta,
-          lowGamma: record.eegPower.lowGamma,
-          highGamma: record.eegPower.highGamma,
-          /* Tipo movimiento */
-          down: fileSettings.moveType == MOVE_TYPE.DOWN ? 1 : 0,
-          up: fileSettings.moveType == MOVE_TYPE.UP ? 1 : 0,
-          right: fileSettings.moveType == MOVE_TYPE.RIGHT ? 1 : 0,
-          left: fileSettings.moveType == MOVE_TYPE.LEFT ? 1 : 0
-        }
+        let dataItem = [
+          record.eegPower.delta, /* delta */
+          record.eegPower.theta, /* theta */
+          record.eegPower.lowAlpha, /* lowAlpha */
+          record.eegPower.highAlpha, /* highAlpha */
+          record.eegPower.lowBeta, /* lowBeta */
+          record.eegPower.highBeta, /* highBeta */
+          record.eegPower.lowGamma, /* lowGamma */
+          record.eegPower.highGamma, /* highGamma */
+         /* Tipo movimiento */
+          fileSettings.moveType, /* moveType */
+        ];
 
         /* Actualiza maximo encontrado */
-        for (let property in dataItem) {
-          if (dataMax.hasOwnProperty(property) && dataMax[property] < dataItem[property])
-            dataMax[property] = dataItem[property];
+        for(let i = 0; i < dataItem.length - 2; i++) {
+          if (dataMax[i] < dataItem[i]) dataMax[i] = dataItem[i];
         }
 
         return dataItem;
@@ -87,6 +102,12 @@ function loadJSON(fileData, settings) {
     readData = dataAugmentation(readData, localSettings);
   }
 
+  if (localSettings.applyFFT) {
+    labelColumn = 8;
+    readData.samples = preProcess(readData.samples, labelColumn);
+    readData.dataMax = calculateDataMaxes(readData.samples);
+  }
+
   if (localSettings.split) {
     return splitData(readData, localSettings);
   }
@@ -94,15 +115,14 @@ function loadJSON(fileData, settings) {
     return readData;
   }
 
-
 }
 
 /**
  * Aleatoriza los datos y los separa en arreglos de muestras y etiquetas
  * Tambien ajusta las etiquetas de acuerdo al nivel de tolerancia fijado en options
- * @param {*} data 
- * @param {*} settings
- * @returns 
+ * @param data Datos leídos de archivos
+ * @param settings Settings generales para carga de archivo
+ * @returns Data separada en muestras y etiquetas
  */
 function splitData(data, settings) {
   const localSettings = Object.assign({
@@ -117,18 +137,10 @@ function splitData(data, settings) {
   // Step 2. Split into samples and labels
   const finalSamples = [];
   const finalLabels = [];
+  const labelColumnCount = 1;
 
-  _.each(dataSamples, (dataItem) => {
-    let regularSample = [
-      dataItem.delta,
-      dataItem.theta,
-      dataItem.lowAlpha,
-      dataItem.highAlpha,
-      dataItem.lowBeta,
-      dataItem.highBeta,
-      dataItem.lowGamma,
-      dataItem.highGamma
-    ];
+  _.each(dataSamples, (dataArray) => {
+    let regularSample = dataArray.slice(0, dataArray.length - labelColumnCount);
 
     /* Se normaliza cada variable de medicion en un rango de 0 a 1, 
     *  usando su porcentaje respecto del maximo valor observado en toda la muestra
@@ -137,17 +149,17 @@ function splitData(data, settings) {
     *  Si no se supera ese % de tolerancia minimo, se desactivan las labels (array de 0)
     *  para descartar la muestra
     */
-    for (var property in dataItem) {
-      let propertyMax = data.dataMax[property];
-      let propertyValue = dataItem[property];
-      if (propertyMax > 0 && propertyValue / propertyMax > localSettings.minTolerance
-      ) {
+    for(let i = 0; i < regularSample.length; i++) {
+      let propertyMax = data.dataMax[i];
+      let propertyValue = regularSample[i];
+      
+      if (propertyMax > 0 && propertyValue / propertyMax > localSettings.minTolerance) {
         finalSamples.push(regularSample);
-        finalLabels.push([dataItem.down, dataItem.up, dataItem.right, dataItem.left]);
-
+        finalLabels.push(dataArray[dataArray.length - 1]);
         break;
       }
     }
+
   });
 
   return {
@@ -156,6 +168,12 @@ function splitData(data, settings) {
   };
 }
 
+/**
+ * Genera nuevos datos a partir de una colección de datos originales
+ * @param data Datos leídos de archivos
+ * @param settings Settings generales para carga de archivo
+ * @returns Colecciones de datos y etiquetas expandida
+ */
 function dataAugmentation(readData, settings) {
 
   // Here we generate 5 synthetic data points to bolster our training data with an balance an imbalanced data set.
@@ -163,74 +181,36 @@ function dataAugmentation(readData, settings) {
 
   if (countToGenerate <= 0) return readData;
 
-  let vectorizedSamples = readData.samples.map((dataItem) => {
-    let result = [
-      dataItem.delta,
-      dataItem.theta,
-      dataItem.lowAlpha,
-      dataItem.highAlpha,
-      dataItem.lowBeta,
-      dataItem.highBeta,
-      dataItem.lowGamma,
-      dataItem.highGamma,
-      /* Tipo movimiento */
-      dataItem.down,
-      dataItem.up,
-      dataItem.right,
-      dataItem.left
-    ];
-
-    return result;
-  });
-
-
   // Pass in your real data vectors.
-  const smote = new SMOTE(vectorizedSamples);
+  const smote = new SMOTE(readData.samples);
 
   let newVectors;
+  const labelColumnCount = 1;
 
   tf.tidy(() => {
     newVectors = smote.generate(countToGenerate).
       map(vector => {
-        let maxIx = vector.length - 4;
+        let maxIx = vector.length - labelColumnCount;
         let features = vector.slice(0, maxIx).map(o => Math.floor(o));
-        let activatedLabelIndex = tf.tensor(vector.slice(maxIx)).softmax().argMax().dataSync();
-        let resultLabels = [0, 0, 0, 0];
-        resultLabels[activatedLabelIndex] = 1;
+        let resultLabel = Math.floor(tf.tensor(vector.slice(maxIx)).dataSync());
 
-        let propIndex = 0;
-        let labelIndex = 0;
-
-        let dataItem = {
-          delta: Math.floor(features[propIndex++]),
-          theta: Math.floor(features[propIndex++]),
-          lowAlpha: Math.floor(features[propIndex++]),
-          highAlpha: Math.floor(features[propIndex++]),
-          lowBeta: Math.floor(features[propIndex++]),
-          highBeta: Math.floor(features[propIndex++]),
-          lowGamma: Math.floor(features[propIndex++]),
-          highGamma: Math.floor(features[propIndex++]),
-          /* Tipo movimiento */
-          down: Math.floor(resultLabels[labelIndex++]),
-          up: Math.floor(resultLabels[labelIndex++]),
-          right: Math.floor(resultLabels[labelIndex++]),
-          left: Math.floor(resultLabels[labelIndex++])
-        };
-
+        /* Tipo movimiento */
+        features.push(resultLabel);
 
         /* Actualiza maximo encontrado */
-        for (let property in dataItem) {
-          if (readData.hasOwnProperty(property) && readData[property] < readData[property])
-            readData.dataMax[property] = dataItem[property];
+        for (let i = 0; i < features.length - 1; i++) {
+          if (readData.dataMax[i] < features[i]) {
+            readData.dataMax[i] = features[i];
+          }
         }
 
-        return dataItem;
+        return features;
       });
   });
 
   readData.samples = readData.samples.concat(newVectors);
 
-  return readData
+  return readData;
 }
 
 /* ****************************************************** */

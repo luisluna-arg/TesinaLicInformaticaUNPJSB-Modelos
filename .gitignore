@@ -2,3 +2,6 @@
 */node_modules/
 RegresionLogistica/js/load-training-json.bk.js
 multinomal-logistic-regression/trained-models/
+Python/__pycache__/
+multinomal-logistic-regression/js/load-training-json_old.js
+multinomal-logistic-regression/js/fft_test.js
