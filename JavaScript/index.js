@@ -1,7 +1,8 @@
 const methods = {
     TF_COREAPI: 0,
     TF_LAYERMODEL: 1,
-    NAIVE_BAYES: 2
+    NAIVE_BAYES: 2,
+    DECISION_TREE: 3
 }
 
 /* 
@@ -10,7 +11,7 @@ const methods = {
  */
 
 /* Definir modelo a usar */
-const ModelType = methods.TF_LAYERMODEL;
+const ModelType = methods.DECISION_TREE;
 
 const { MOVE_TYPE, loadJSON, splitData } = require('./js/load-training-json');
 const _ = require('lodash');
@@ -26,6 +27,21 @@ const { Naivebayes } = (() => {
         }
         default: {
             return { Naivebayes: null };
+        }
+    }
+})();
+
+const { DirectionDecisionTree } = (() => {
+    switch (ModelType) {
+        case methods.DECISION_TREE: {
+            console.log("");
+            console.log("TIPO MODELO: DECISION_TREE");
+            console.log("==================");
+            console.log("");
+            return require('./js/decision-tree');
+        }
+        default: {
+            return { DirectionDecisionTree: null };
         }
     }
 })();
@@ -63,10 +79,10 @@ const filesToLoad = [
     { file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }
 ];
 
-let loadingSettings = { 
-    shuffle: false, 
+let loadingSettings = {
+    shuffle: true,
     split: false,
-    dataAugmentation: true,
+    dataAugmentation: false,
     dataAugmentationTotal: 50000,
     minTolerance: 0.0 /* 0 para que traiga todo */
 };
@@ -90,23 +106,26 @@ const regressionSettingsCoreModel = {
 };
 
 const regressionSettingsLayerModel = {
-    learningRate: 0.00005, //0.5, 
-    iterations: 800,
-    batchSize: 10000,//Math.floor(loadedData.samples.length * batchSize),
+    learningRate: 0.000005, //0.5, 
+    iterations: 5000,
+    batchSize: 500,//Math.floor(loadedData.samples.length * batchSize),
     useReLu: false,
     shuffle: !loadingSettings.shuffle,
-    verbose: true,
-    normalize: false
+    verbose: true
 };
 
 const naiveBayesSettings = {
     MoveTypeEnum: MOVE_TYPE,
     verbose: false,
-    normalize: true,
     useReLu: false
 };
 
-const testPercentage = 2;
+const decisionTreeSettings = {
+    MoveTypeEnum: MOVE_TYPE,
+    verbose: false,
+    useReLu: false
+};
+
 const trainingExerciseCount = 1;
 
 // console.log("Regression Settings (Core): " + JSON.stringify(regressionSettingsCoreModel));
@@ -116,29 +135,37 @@ console.log("");
 let promises = [];
 let testings = [];
 
-console.log("Inicio", new Date());
+// console.log("Inicio", new Date());
 
 for (let i = 0; i < trainingExerciseCount; i++) {
     let { samples, labels } = splitData(loadedData, loadingSettings);
 
-    const trainingLength = samples.length - 20;
+    /* Data de entrenamiento */
+    const trainingLength = Math.floor(samples.length * 0.7);
     const trainingData = samples.slice(0, trainingLength);
     const trainingLabels = labels.slice(0, trainingLength);
-    const testData = samples.slice(trainingLength);
-    const testLabels = labels.slice(trainingLength);
 
-    switch  (ModelType) {
+    /* Data de pruebas */
+    const testLength = samples.length - trainingLength;
+    const testData = samples.slice(testLength);
+    const testLabels = labels.slice(testLength);
+
+    switch (ModelType) {
         case methods.TF_LAYERMODEL: {
             const regression = new LogisticRegression(trainingData, trainingLabels, regressionSettingsLayerModel);
-            promises.push(
-                regression.train(function(logs) {
-                    console.log("train logs", logs);
-                    let result = regression.test(testData, testLabels);
-                    testings.push(result);
-                    console.log("Sample count: ", regression.samples.shape[0], ", Precision [" + (i + 1) + "]", result);
-                    regression.summary();
-                })
-                );
+
+            // promises.push(
+            //     regression.train(function (logs) {
+            //         console.log("train logs", logs);
+            //         let result = regression.test(testData, testLabels);
+            //         testings.push(result);
+            //         console.log("Sample count: ", regression.samples.shape[0], ", Precision [" + (i + 1) + "]", result);
+            //         regression.summary();
+            //     })
+            // );
+
+            regression.testModel(testData, testLabels);
+
             break;
         }
         case methods.TF_COREAPI: {
@@ -166,6 +193,28 @@ for (let i = 0; i < trainingExerciseCount; i++) {
 
             break;
         }
+        case methods.DECISION_TREE: {
+            console.log("Crear Arbol mediante muestras");
+            const decisionTree = new DirectionDecisionTree(trainingData, trainingLabels, decisionTreeSettings);
+            decisionTree.train();
+            let result = decisionTree.test(testData, testLabels);
+            testings.push(result);
+            console.log("Precision [" + (i + 1) + "]", result);
+
+            let localJson = decisionTree.toJSON();
+
+            console.log("");
+            console.log("Crear Arbol mediante JSON");
+            const decisionTreeJSON = new DirectionDecisionTree(localJson);
+            decisionTreeJSON.train();
+            let JSONResult = decisionTreeJSON.test(testData, testLabels);
+            console.log("Precision JSON [" + (i + 1) + "]", JSONResult);
+
+            decisionTree.summary();
+            // decisionTree.printTrainingData();
+
+            break;
+        }
     }
 }
 
@@ -176,7 +225,7 @@ function showResults(currentResults) {
         ", Min: " + _.round(_.min(currentResults), rounding) +
         ", Max: " + _.round(_.max(currentResults), rounding)
     );
-    console.log("Fin", new Date());
+    // console.log("Fin", new Date());
 }
 
 if (ModelType == methods.TF_LAYERMODEL) {
