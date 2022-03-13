@@ -21,6 +21,10 @@ const FEATURE_NAMES = [
 
 const CLASS_NAME = "moveType";
 
+function floatToFixed(number) {
+    return parseFloat(number.toFixed(8));
+}
+
 /* ****************************************************** */
 /* ****************************************************** */
 /* ****************************************************** */
@@ -155,8 +159,8 @@ class DirectionDecisionTree {
         console.log("=======");
         console.log("Samples", this.trainingData.length);
         console.log("Feature count", FEATURE_NAMES.length);
-        console.log("Train Accuracy", this.trainAccuracy);
-        console.log("Test Accuracy", this.testAccuracy);
+        console.log("Train Accuracy", floatToFixed(this.trainAccuracy * 100));
+        console.log("Test Accuracy", floatToFixed(this.testAccuracy * 100));
         console.log("");
     }
 
