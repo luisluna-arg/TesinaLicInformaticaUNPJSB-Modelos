@@ -1,5 +1,4 @@
 const tf = require('@tensorflow/tfjs-node');
-// @tensorflow/tfjs-node
 const _ = require('lodash');
 
 class LogisticRegression {
@@ -24,8 +23,6 @@ class LogisticRegression {
 
         this.costHistory = []; // Cross-Entropy values
         this.weights = tf.ones([this.samples.shape[1], this.labels.shape[1]]);
-
-        console.log("samples.length", this.samples.shape[0]);
     }
 
     processSamples(samplesToProcess) {
@@ -210,5 +207,5 @@ class LogisticRegression {
 }
 
 module.exports = {
-    LogisticRegression
+    model: LogisticRegression
 };

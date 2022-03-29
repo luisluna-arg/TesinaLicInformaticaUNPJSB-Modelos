@@ -2,6 +2,23 @@
 const tf = require('@tensorflow/tfjs-node');
 const _ = require('lodash');
 
+const labelMapper = (labelValue) => {
+    let result = new Array(4);
+    result.fill(0);
+    result[labelValue - 1] = 1;
+    return result;
+};
+
+const addLayers = (model, layers) => {
+    for (let i = 0; i < layers.length; i++) {
+        model.add(layers[i]);
+    }
+};
+
+const formatFloat = (value, decimals = 8) => parseFloat(value.toFixed(decimals));
+
+const formatFloatArray = (value, decimals = 8) => parseFloat(value.dataSync()[0].toFixed(decimals));
+
 class LogisticRegression {
 
     constructor(baseSamples, baseLabels, options) {
@@ -21,110 +38,82 @@ class LogisticRegression {
             decisionBoundary: 0.5,
             subject: "TestSubject_2",
             useReLu: false,
-            shuffle: false,
-            normalize: false
+            shuffle: false
         }, options);
 
         this.costHistory = [];
         this.learningRateHistory = [];
 
-        if (this.options.normalize) {
-            baseSamples = this.normalize(baseSamples);
-        }
+        this.samples = tf.tensor(baseSamples);
+        this.labels = tf.tensor(baseLabels.map(labelMapper));
 
-        this.samples = tf.tensor2d(baseSamples);
-        this.labels = tf.tensor1d(baseLabels);
+        const { mean, variance } = tf.moments(this.samples, 0);
+        this.mean = mean;
+        this.variance = variance;
 
         /* Define model compilation settings */
         this.compileSettings = {
-            optimizer: 'sgd',
-            loss: tf.losses.softmaxCrossEntropy,
-            weights: this.weights,
-            metrics: [
-                tf.metrics.MSE,
-                tf.metrics.binaryAccuracy
-            ],
+            optimizer: tf.train.sgd(this.options.learningRate),
+            loss: "meanSquaredError",
+            metrics: ["accuracy"]
         };
 
-        // Defines a simple logistic regression model with 32 dimensional input
-        // and 3 dimensional output.
-        let inputShape = this.samples.shape[1];
-        let outputShape = 1;
+        this.model = tf.sequential();
 
-        // console.log("inputShape", inputShape);
-        // console.log("outputShape", outputShape);
+        addLayers(this.model, [
+            tf.layers.dense({ inputShape: [this.samples.shape[1]], units: 4, activation: "relu" })
+        ]);
 
-        const x = tf.input({ shape: inputShape });
-        const y = tf.layers.dense({ units: outputShape, activation: 'softmax' }).apply(x);
-        this.model = tf.model({ 
-            inputs: x, 
-            outputs: y 
-        });
-    }
-
-    normalize(samplesToNormalize) {
-        let tansposedSamples = [];
-
-        tf.tidy(() => {
-            tansposedSamples = tf.tensor(samplesToNormalize).transpose().arraySync();
-            for (let i = 0; i < tansposedSamples.length; i++) {
-                let currentSample = tansposedSamples[i];
-                let temporalTensor = tf.tensor(currentSample);
-                const inputMax = temporalTensor.max();
-                const inputMin = temporalTensor.min();
-                if (inputMax.sub(inputMin).dataSync() != 0) {
-                    tansposedSamples[i] = temporalTensor.sub(inputMin).div(inputMax.sub(inputMin)).dataSync();
-                }
-                else {
-                    tansposedSamples[i] = temporalTensor.dataSync();
-                }
-            }
-            tansposedSamples = tf.tensor(tansposedSamples).transpose().arraySync();
-        })
-
-        return tansposedSamples;
     }
 
     async train(trainEndCallback) {
         this.model.compile(this.compileSettings);
+
         return await this.model.fit(this.samples, this.labels, {
-            batchSize: this.options.batchSize,
-            epochs: this.options.iterations,
+            batchSize: 250,
+            epochs: 500,
             verbose: false,
-            shuffle: this.options.shuffle,
             callbacks: { onTrainEnd: trainEndCallback }
         });
     }
 
     test(testData, testLabels) {
-        console.log("Testing");
         const predictions = [];
-        let precision = 0;
+        let finalResult = null;
 
         tf.tidy(() => {
             let testDataTensor = tf.tensor(testData);
-            let testLabelTensor = tf.tensor(testLabels);
+            let testLabelTensor = tf.tensor(testLabels.map(labelMapper));
+
             let result = this.model.evaluate(testDataTensor, testLabelTensor, {
                 batchSize: this.options.batchSize
             });
 
             if (this.options.verbose) {
-                let ix = 0;
+                console.log("");
                 console.log("===============================");
                 console.log("Samples for test : ", testDataTensor.shape);
                 console.log("Labels for test : ", testLabelTensor.shape);
                 console.log("===============================");
-                console.log("result[" + ix + "] | Loss: ", result[ix++].dataSync());
-                console.log("result[" + ix + "] | MSE: ", result[ix++].dataSync());
-                console.log("result[" + ix + "] | binaryAccuracy: ", result[ix++].dataSync());
 
-                console.log("model");
-                console.log(
-                    this.model.layers.
-                        map(layer => layer.getWeights().
-                            map(weight => "Dimension: [" + weight.shape[0] + ", " + weight.shape[1] + "]")
-                        )
-                );
+                console.log("result[" + 0 + "] | Loss: ", formatFloatArray(result[0]));
+                for (let x = 1; x < result.length; x++) {
+                    let metric = this.compileSettings.metrics[x - 1];
+                    console.log("result[" + x + "] | " + metric + ": ", formatFloatArray(result[x]));
+                }
+
+                console.log("");
+                console.log("Capas y pesos");
+                for (let i = 0; i < this.model.layers.length; i++) {
+                    let layer = this.model.layers[i];
+                    console.log("layer", layer.name);
+                    let weights = layer.getWeights();
+                    for (let j = 0; j < weights.length; j++) {
+                        let weight = weights[j];
+                        console.log("Dimension: [" + weight.shape[0] + ", " + weight.shape[1] + "]");
+                    }
+                }
+                console.log("");
             }
 
             let predictionsValues = [];
@@ -132,29 +121,13 @@ class LogisticRegression {
 
             for (let i = 0; i < testData.length; i++) {
                 const dataItem = testData[i];
-                // console.log("dataItem", dataItem);
-                const dataItemTensor = tf.tensor([dataItem]);
-                // const dataItemTensor2 = tf.tensor(dataItem);
-
-                // console.log("dataItemTensor.shape", dataItemTensor.shape);
-                // console.log("dataItemTensor2.shape", dataItemTensor2.shape);
-
-                const predictionTensor = this.model.predict(dataItemTensor, { verbose: true });
-
-                if (this.options.verbose) {
-                    // console.log("predictionTensor", predictionTensor.dataSync());
-                }
-
-                const predictedIndex = predictionTensor.argMax(1).dataSync();
-                let prediction = [0, 0, 0, 0];
-                prediction[predictedIndex] = 1;
-
                 const expectedLabel = testLabels[i];
+                const prediction = this.predict(dataItem);
+
                 const predictionResult = [prediction, expectedLabel, _.isEqual(prediction, expectedLabel)];
 
                 if (this.options.verbose) {
-                    // console.log("expectedLabel", expectedLabel);
-                    console.log("prediction", prediction);
+                    // console.log("expectedLabel", expectedLabel, "prediction", prediction);
                 }
 
                 predictions.push(predictionResult);
@@ -165,11 +138,29 @@ class LogisticRegression {
 
             const total = predictions.length;
             const correct = predictions.filter(o => o[2]).length;
+            let precision = formatFloat(correct / total * 100);
 
-            precision = correct / total * 100;
+            const { mean, variance } = tf.moments(predictionsValues, 0);
+            let varianceVal = formatFloatArray(variance);
+            let devStd = formatFloatArray(tf.sqrt(varianceVal));
+            let meanVal = formatFloatArray(mean);
+
+            finalResult = {
+                mean: meanVal, 
+                variance: varianceVal, 
+                precision,
+                devStd
+            };
         });
 
-        return precision;
+        return finalResult;
+    }
+
+    predict(dataItem) {
+        const predictionTensor = this.model.predict(tf.tensor([dataItem]), { verbose: true });
+        const predictedIndex = predictionTensor.argMax(1).dataSync()[0];
+        let prediction = predictedIndex + 1;
+        return prediction;
     }
 
     summary() {
@@ -189,5 +180,5 @@ class LogisticRegression {
 
 
 module.exports = {
-    LogisticRegression
+    model: LogisticRegression
 };

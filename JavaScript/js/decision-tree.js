@@ -8,17 +8,6 @@ const _ = require('lodash');
 /* ****************************************************** */
 /* ****************************************************** */
 
-const FEATURE_NAMES = [
-    "delta",
-    "theta",
-    "lowAlpha",
-    "highAlpha",
-    "lowBeta",
-    "highBeta",
-    "lowGamma",
-    "highGamma"
-];
-
 const CLASS_NAME = "moveType";
 
 function floatToFixed(number) {
@@ -31,9 +20,9 @@ function floatToFixed(number) {
 
 class Sample {
 
-    constructor(sampleValues, label) {
+    constructor(sampleValues, featureNames, label) {
         for (let i = 0; i < sampleValues.length; i++) {
-            const featureName = FEATURE_NAMES[i];
+            const featureName = featureNames[i];
             this[featureName] = sampleValues[i];
         }
 
@@ -74,29 +63,33 @@ class DirectionDecisionTree {
         }, options);
 
 
-        this.decisionTree = new DecisionTree(CLASS_NAME, FEATURE_NAMES);
         this.trainAccuracy = 0;
         this.testAccuracy = 0;
         this.JSONTrained = false;
 
-        if (args.length == 1) {
-            json = args[0];
+        let argIndex = 0;
+        if (args.length == 2) {
+            json = args[argIndex++];
+            this.FEATURE_NAMES = args[argIndex++];
+            
+            this.decisionTree = new DecisionTree(CLASS_NAME, this.FEATURE_NAMES);
             this.decisionTree.import(json);
             this.JSONTrained = true;
         }
-        else if (args.length == 3) {
-            trainingSamples = args[0];
-            trainingLabels = args[1];
-            options = args[2];
+        else if (args.length == 4) {
+            trainingSamples = args[argIndex++];
+            trainingLabels = args[argIndex++];
+            this.FEATURE_NAMES = args[argIndex++];
+            options = args[argIndex++];
 
             if (typeof trainingSamples == 'undefined' || trainingSamples == null || trainingSamples.length == 0) {
                 throw 'Coleccion features no valida';
             }
 
             let firstSample = trainingSamples[0];
-            if (!Array.isArray(firstSample) || firstSample.length != FEATURE_NAMES.length) {
+            if (!Array.isArray(firstSample) || firstSample.length != this.FEATURE_NAMES.length) {
                 throw 'La forma de las muestras no coincide con la esperada. Muestras: [,' +
-                FEATURE_NAMES.length +
+                this.FEATURE_NAMES.length +
                 '], Forma recibida: [' +
                 trainingSamples.length +
                 ',' +
@@ -108,15 +101,15 @@ class DirectionDecisionTree {
                 throw 'Coleccion labels no valida';
             }
 
+            this.decisionTree = new DecisionTree(CLASS_NAME, this.FEATURE_NAMES);
             this.trainingLabels = trainingLabels;
             this.trainingData = this.formatSamples(trainingSamples, this.trainingLabels);
         }
-
     }
 
     train() {
         if (this.JSONTrained) {
-            console.log("Can't train, tree already trained via JSON");
+            console.log("No se puede entrenar, arbol creado mediante JSON");
             return;
         }
 
@@ -135,22 +128,18 @@ class DirectionDecisionTree {
 
         for (let i = 0; i < testSamples.length; i++) {
             const sample = testSamples[i];
-            const label = testLabels[i];
+            const label = testLabels[i][0];
 
-            let predictedClass = this.predict(sample);
-
-            // console.log("sample", sample);
-            // console.log("label", label, "predictedClass", predictedClass);
-
+            let predictedClass = this.predict(sample)[0];
             incorrect += predictedClass === label ? 0 : 1;
             comparison.push([label, predictedClass]);
         }
 
-        return (testSamples.length - incorrect) / testSamples.length * 100;
+        return { precision: (testSamples.length - incorrect) / testSamples.length * 100 };
     }
 
     predict(predictionSample) {
-        return this.decisionTree.predict(new Sample(predictionSample));
+        return this.decisionTree.predict(new Sample(predictionSample, this.FEATURE_NAMES));
     }
 
     summary() {
@@ -158,8 +147,7 @@ class DirectionDecisionTree {
         console.log("Summary");
         console.log("=======");
         console.log("Samples", this.trainingData.length);
-        console.log("Feature count", FEATURE_NAMES.length);
-        console.log("Train Accuracy", floatToFixed(this.trainAccuracy * 100));
+        console.log("Feature count", this.FEATURE_NAMES.length);
         console.log("Test Accuracy", floatToFixed(this.testAccuracy * 100));
         console.log("");
     }
@@ -186,7 +174,7 @@ class DirectionDecisionTree {
         for (let i = 0; i < sampleValues.length; i++) {
             let values = sampleValues[i];
             let label = sampleLabels[i];
-            let sampleInstance = new Sample(values, label);
+            let sampleInstance = new Sample(values, this.FEATURE_NAMES, label);
             results.push(sampleInstance);
         }
         return results;
@@ -210,5 +198,5 @@ class DirectionDecisionTree {
 /* ****************************************************** */
 
 module.exports = {
-    DirectionDecisionTree: DirectionDecisionTree
-};
+    model: DirectionDecisionTree
+}

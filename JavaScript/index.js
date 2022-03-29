@@ -1,100 +1,156 @@
-const methods = {
-    TF_COREAPI: 0,
-    TF_LAYERMODEL: 1,
-    NAIVE_BAYES: 2,
-    DECISION_TREE: 3
-}
-
 /* 
  * Ejecutar local con "node --inspect index.js"
  * Cambiar ModelType para alternar entre modelos manual y de capas
  */
 
-/* Definir modelo a usar */
-const ModelType = methods.DECISION_TREE;
-
 const { MOVE_TYPE, loadJSON, splitData } = require('./js/load-training-json');
 const _ = require('lodash');
 
-const { Naivebayes } = (() => {
-    switch (ModelType) {
+/* ************************************************************** */
+/* ************************************************************** */
+/* ************************************************************** */
+
+let enumValue = 0;
+const methods = {
+    TF_LAYERMODEL: enumValue++,
+    NAIVE_BAYES: enumValue++,
+    DECISION_TREE: enumValue++,
+    /* ************************* */
+    NEURO: enumValue++,
+    CONV_NET_LSTM: enumValue++,
+    NET_LSTM: enumValue++,
+    /* ************************* */
+    TF_COREAPI: enumValue++,
+}
+
+
+const printHeader = function (header) {
+    console.log("");
+    console.log(header);
+    console.log(new Array(header.length + 1).fill("=").join(''));
+    console.log("");
+}
+
+const printSubHeader = function (subheader) {
+    console.log("");
+    console.log("> " + subheader);
+}
+
+const loadModel = (modelType) => {
+    const FILE_BASE_PATH = './js/';
+    let fileName = null;
+    let modelName = null;
+    
+    switch (modelType) {
+        case methods.CONV_NET_LSTM: {
+            modelName = 'CONV_NET_LSTM';
+            fileName = FILE_BASE_PATH + 'ConvNetLSTM';
+            break;
+        }
         case methods.NAIVE_BAYES: {
-            console.log("");
-            console.log("TIPO MODELO: NAIVE_BAYES");
-            console.log("==================");
-            console.log("");
-            return require('./js/naive-bayes');
+            modelName = 'NAIVE_BAYES';
+            fileName = FILE_BASE_PATH + 'naive-bayes';
+            break;
         }
-        default: {
-            return { Naivebayes: null };
-        }
-    }
-})();
-
-const { DirectionDecisionTree } = (() => {
-    switch (ModelType) {
         case methods.DECISION_TREE: {
-            console.log("");
-            console.log("TIPO MODELO: DECISION_TREE");
-            console.log("==================");
-            console.log("");
-            return require('./js/decision-tree');
+            modelName = 'DECISION_TREE'
+            fileName = FILE_BASE_PATH + 'decision-tree';
+            break;
         }
-        default: {
-            return { DirectionDecisionTree: null };
+        case methods.NEURO: {
+            modelName = "NEURO";
+            fileName = FILE_BASE_PATH + 'neuronalNetwork';
+            break;
         }
-    }
-})();
-
-const { LogisticRegression } = (() => {
-    switch (ModelType) {
         case methods.TF_COREAPI: {
-            console.log("");
-            console.log("TIPO MODELO: TF_COREAPI");
-            console.log("==================");
-            console.log("");
-            return require('./js/logistic-regression');
+            modelName = 'TF_COREAPI';
+            fileName = FILE_BASE_PATH + 'logistic-regression';
+            break;
         }
         case methods.TF_LAYERMODEL: {
-            console.log("");
-            console.log("TIPO MODELO: TF_LAYERMODEL");
-            console.log("=========================");
-            console.log("");
-            return require('./js/logistic-regression-model');
+            modelName = 'TF_LAYERMODEL';
+            fileName = FILE_BASE_PATH + 'logistic-regression-model';
+            break;
         }
-        default: {
-            return { Naivebayes: null };
+        case methods.NET_LSTM: {
+            modelName = 'NET_LSTM';
+            fileName = FILE_BASE_PATH + 'NetWithLSTM';
+            break;
         }
     }
-})();
 
-//const fileBasePath = './data/generated';
+    if (fileName == null) return null;
+
+    printHeader("TIPO MODELO: " + modelName);
+    return require(fileName).model;
+}
+
+
+/* Definir modelo a usar */
+const ModelType = methods.TF_LAYERMODEL;
+const ModelClass = loadModel(ModelType)
+
+
+/* ************************************************************** */
+/* ************************************************************** */
+/* ************************************************************** */
+
+let loadingSettings = {};
+switch (ModelType) {
+    case methods.DECISION_TREE: {
+        Object.assign(loadingSettings, {
+            shuffle: true,
+            split: false,
+            truncate: false,
+            decimals: 4,
+            normalization: false,
+            fourier: true,
+            deviationMatrix: true,
+            dataAugmentation: true,
+            dataAugmentationTotal: 1000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+            minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
+        });
+        break;
+    }
+    default: {
+        Object.assign(loadingSettings, {
+            shuffle: true,
+            split: false,
+            truncate: false,
+            decimals: 5,
+            normalization: false,
+            fourier: false,
+            deviationMatrix: false,
+            dataAugmentation: true,
+            dataAugmentationTotal: 1000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+            minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
+        });
+        break;
+    }
+}
+
+let message = "Lectura de datos" + (loadingSettings.dataAugmentation ? " (Con Data Augmentation)" : "")
+printHeader(message);
+
 const fileBasePath = './data/Full';
-//const fileBasePath = './data/2022.2.22';
+// const fileBasePath = './data/generated';
+// const fileBasePath = './data/2022.2.22';
+// const fileBasePath = './data/2022.3.19_Brazos';
+// const fileBasePath = './data/2022.3.19_Cabeza';
 
-const filesToLoad = [
-    { file: fileBasePath + '/ABAJO.json', moveType: MOVE_TYPE.DOWN },
-    { file: fileBasePath + '/ARRIBA.json', moveType: MOVE_TYPE.UP },
-    { file: fileBasePath + '/IZQUIERDA.json', moveType: MOVE_TYPE.LEFT },
-    { file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }
-];
+let loadedData = null;
 
-let loadingSettings = {
-    shuffle: true,
-    split: false,
-    dataAugmentation: false,
-    dataAugmentationTotal: 50000,
-    minTolerance: 0.0 /* 0 para que traiga todo */
-};
+loadedData = loadJSON([{ file: fileBasePath + '/ABAJO.json', moveType: MOVE_TYPE.DOWN }], loadingSettings);
+loadedData.concat(loadJSON([{ file: fileBasePath + '/ARRIBA.json', moveType: MOVE_TYPE.UP }], loadingSettings));
+loadedData.concat(loadJSON([{ file: fileBasePath + '/IZQUIERDA.json', moveType: MOVE_TYPE.LEFT }], loadingSettings));
+loadedData.concat(loadJSON([{ file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }], loadingSettings));
 
-let loadedData = loadJSON(filesToLoad, loadingSettings);
+let start = loadedData.samples.length - 2005;
+start = start < 0 ? 0 : start;
 
 /* ************************************************************** */
 
-console.log("");
-console.log("Testings");
-console.log("========");
-console.log("");
+printHeader("Testings");
 
 const regressionSettingsCoreModel = {
     learningRate: 0.5,
@@ -122,15 +178,29 @@ const naiveBayesSettings = {
 
 const decisionTreeSettings = {
     MoveTypeEnum: MOVE_TYPE,
+    verbose: false
+};
+
+const neuroSettings = {
+    MoveTypeEnum: MOVE_TYPE,
+    verbose: true,
+    epochs: 10,
+    stepsPerEpoch: 500,
+    validationSteps: 2,
+    learningRate: 0.5
+};
+
+const NetLSTMSettings = {
+    epochs: 10,
+    batchSize: 2,
     verbose: false,
-    useReLu: false
 };
 
 const trainingExerciseCount = 1;
 
 // console.log("Regression Settings (Core): " + JSON.stringify(regressionSettingsCoreModel));
-console.log("Split Data Settings: " + JSON.stringify(loadingSettings));
-console.log("");
+// console.log("Split Data Settings: " + JSON.stringify(loadingSettings));
+// console.log("");
 
 let promises = [];
 let testings = [];
@@ -146,39 +216,36 @@ for (let i = 0; i < trainingExerciseCount; i++) {
     const trainingLabels = labels.slice(0, trainingLength);
 
     /* Data de pruebas */
-    const testLength = samples.length - trainingLength;
-    const testData = samples.slice(testLength);
-    const testLabels = labels.slice(testLength);
+    const testData = samples.slice(trainingLength);
+    const testLabels = labels.slice(trainingLength);
 
     switch (ModelType) {
         case methods.TF_LAYERMODEL: {
-            const regression = new LogisticRegression(trainingData, trainingLabels, regressionSettingsLayerModel);
+            // LogisticRegression
+            const regression = new ModelClass(trainingData, trainingLabels, regressionSettingsLayerModel);
 
-            // promises.push(
-            //     regression.train(function (logs) {
-            //         console.log("train logs", logs);
-            //         let result = regression.test(testData, testLabels);
-            //         testings.push(result);
-            //         console.log("Sample count: ", regression.samples.shape[0], ", Precision [" + (i + 1) + "]", result);
-            //         regression.summary();
-            //     })
-            // );
-
-            regression.testModel(testData, testLabels);
+            promises.push(
+                regression.train(function (logs) {
+                    let result = regression.test(testData, testLabels);
+                    testings.push(result);
+                    regression.summary();
+                })
+            );
 
             break;
         }
         case methods.TF_COREAPI: {
-            const regression = new LogisticRegression(trainingData, trainingLabels, regressionSettingsCoreModel);
+            // LogisticRegression
+            const regression = new ModelClass(trainingData, trainingLabels, regressionSettingsCoreModel);
             regression.train();
             let result = regression.test(testData, testLabels);
             testings.push(result);
-            console.log("Precision [" + (i + 1) + "]", result);
-            // regression.summary();
+            regression.summary();
             break;
         }
         case methods.NAIVE_BAYES: {
-            const naiveBayes = new Naivebayes(trainingData, trainingLabels, naiveBayesSettings);
+            // NaiveBayes
+            const naiveBayes = new ModelClass(trainingData, trainingLabels, naiveBayesSettings);
             naiveBayes.train();
             let result = naiveBayes.test(testData, testLabels);
             testings.push(result);
@@ -194,36 +261,73 @@ for (let i = 0; i < trainingExerciseCount; i++) {
             break;
         }
         case methods.DECISION_TREE: {
-            console.log("Crear Arbol mediante muestras");
-            const decisionTree = new DirectionDecisionTree(trainingData, trainingLabels, decisionTreeSettings);
+            printSubHeader("Crear Arbol mediante muestras");
+
+            const decisionTree = new ModelClass(trainingData, trainingLabels, loadedData.FEATURE_NAMES, decisionTreeSettings);
             decisionTree.train();
             let result = decisionTree.test(testData, testLabels);
             testings.push(result);
-            console.log("Precision [" + (i + 1) + "]", result);
-
+            console.log("Precision [" + (i + 1) + "]", parseFloat(result.precision.toFixed(8)));
             let localJson = decisionTree.toJSON();
 
-            console.log("");
-            console.log("Crear Arbol mediante JSON");
-            const decisionTreeJSON = new DirectionDecisionTree(localJson);
+            printSubHeader("Crear Arbol mediante JSON");
+            const decisionTreeJSON = new ModelClass(localJson, loadedData.FEATURE_NAMES);
             decisionTreeJSON.train();
             let JSONResult = decisionTreeJSON.test(testData, testLabels);
-            console.log("Precision JSON [" + (i + 1) + "]", JSONResult);
+            console.log("Precision JSON [" + (i + 1) + "]", parseFloat(JSONResult.precision.toFixed(8)));
 
             decisionTree.summary();
-            // decisionTree.printTrainingData();
 
             break;
         }
+        case methods.NEURO: {
+            printSubHeader("Red neuronal");
+            // NeuronalNetwork
+            const neuro = new ModelClass(trainingData, trainingLabels, neuroSettings);
+            neuro.train();
+            let result = neuro.test(testData, testLabels);
+            testings.push(result);
+            // console.log("Precision [" + (i + 1) + "]", result);
+            break;
+        }
+        case methods.CONV_NET_LSTM: {
+            printSubHeader("Red CONV_NET_LSTM");
+            // ConvNetLSTM
+            const net = new ModelClass(trainingData, trainingLabels, neuroSettings);
+            // net.testModel(testData, testLabels);
+            net.train();
+            let result = net.test(testData, testLabels);
+            testings.push(result);
+            // console.log("Precision [" + (i + 1) + "]", result);
+            break;
+        }
+        case methods.NET_LSTM: {
+            printSubHeader("Red NET_LSTM");
+            // NET_LSTM
+            const net = new ModelClass(trainingData, trainingLabels, NetLSTMSettings);
+            net.train();
+            let result = net.test(testData, testLabels);
+            testings.push(result);
+            // console.log("Precision [" + (i + 1) + "]", result);
+            break;
+
+            
+            break;
+        }
+        
+        
     }
 }
 
 const rounding = 2;
 
 function showResults(currentResults) {
-    console.log("Promedio: " + _.round((_.sum(currentResults) / currentResults.length), rounding) +
-        ", Min: " + _.round(_.min(currentResults), rounding) +
-        ", Max: " + _.round(_.max(currentResults), rounding)
+    // console.log("showResults.currentResults", currentResults);
+    let precision = currentResults.map(o => o.precision);
+
+    console.log("Promedio: " + _.round((_.sum(precision) / precision.length), rounding) +
+        ", Min: " + _.round(_.min(precision), rounding) +
+        ", Max: " + _.round(_.max(precision), rounding)
     );
     // console.log("Fin", new Date());
 }

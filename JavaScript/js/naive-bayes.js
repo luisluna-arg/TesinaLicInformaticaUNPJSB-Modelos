@@ -2,6 +2,18 @@ const tf = require('@tensorflow/tfjs-node');
 // @tensorflow/tfjs-node
 const _ = require('lodash');
 
+const labelMapper = (labelValue) => {
+    let result = new Array(4);
+    result.fill(0);
+    result[labelValue - 1] = 1;
+    return result;
+};
+
+const formatFloat = (value, decimals = 8) => parseFloat(value.toFixed(decimals));
+
+const formatFloatArray = (value, decimals = 8) => parseFloat(value.dataSync()[0].toFixed(decimals));
+
+
 /**
  * Naive-Bayes Classifier
  * Takes an (optional) options object containing:
@@ -221,18 +233,41 @@ class NaiveBayes {
 
         const self = this;
 
-        let incorrect = 0;
-        let comparison = [];
+        let finalResult = null;
+        let predictionsValues = [];
+        let labelValues = [];
+        const predictions = [];
 
         for (let i = 0; i < testFeatures.length; i++) {
-            const feature = testFeatures[i];
-            const labelArray = testLabels[i];
-            const predictedLabelArray = self.predict(feature);
-            incorrect += _.isEqual(predictedLabelArray, labelArray) ? 0 : 1;
-            comparison.push([labelArray, predictedLabelArray]);
-        }
+            const sample = testFeatures[i];
+            const expectedLabelArray = testLabels[i];
+            const predictionLabelArray = self.predict(sample);
 
-        return (testFeatures.length - incorrect) / testFeatures.length * 100;
+            const predictionResult = [predictionLabelArray, expectedLabelArray, _.isEqual(predictionLabelArray, expectedLabelArray)];
+
+            predictions.push(predictionResult);
+
+            predictionsValues.push(predictionLabelArray);
+            labelValues.push(expectedLabelArray);
+        }
+        
+        const total = predictions.length;
+        const correct = predictions.filter(o => o[2]).length;
+        let precision = formatFloat(correct / total * 100);
+
+        const { mean, variance } = tf.moments(predictionsValues, 0);
+        let varianceVal = formatFloatArray(variance);
+        let devStd = formatFloatArray(tf.sqrt(varianceVal));
+        let meanVal = formatFloatArray(mean);
+
+        finalResult = {
+            mean: meanVal, 
+            variance: varianceVal, 
+            precision,
+            devStd
+        };
+
+        return finalResult;
     }
 
     summary() {
@@ -258,5 +293,5 @@ class NaiveBayes {
 }
 
 module.exports = {
-    Naivebayes: NaiveBayes
+    model: NaiveBayes
 };
