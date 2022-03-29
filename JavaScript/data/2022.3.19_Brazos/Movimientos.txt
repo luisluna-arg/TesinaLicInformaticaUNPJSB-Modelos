@@ -1,0 +1,4 @@
+Levantar brazo izquierdo
+Levantar brazo derecho
+Levantar ambos brazos hacia arriba
+Mover los antebrazos de arriba hacia abajo, con los codos pegados al cuerpo
