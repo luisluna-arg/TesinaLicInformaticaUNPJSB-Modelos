@@ -8,6 +8,30 @@ const { preProcess } = require('./data-preprocessing');
 /* ****************************************************** */
 /* ****************************************************** */
 
+const defaultDecimals = 5;
+
+function getArrayShape(array) {
+  return [array.length, array.length > 0 ? Array.isArray(array[0]) ? array[0].length : 1 : 1];
+}
+
+function isNullOrUndef(value) {
+  return typeof value == 'undefined' || value == null;
+}
+
+function featureNamesForDevMatrix(featureNames) {
+  let newNames = [];
+  for (let a = 0; a < featureNames.length; a++) {
+    const featureName = featureNames[a];
+    newNames.push(featureName + '_m');
+    newNames.push(featureName + '_std');
+  }
+  return newNames;
+}
+
+/* ****************************************************** */
+/* ****************************************************** */
+/* ****************************************************** */
+
 const MOVE_TYPE = {
   NONE: 0,
   DOWN: 1,
@@ -16,26 +40,108 @@ const MOVE_TYPE = {
   RIGHT: 4
 };
 
-/* ****************************************************** */
+class ReadData {
 
-/**
- * Calcula los valores maximos para una coleccion de muestras, por columnas
- * @param {*} samples Muestras a analizar
- * @returns Arreglo de maximos de igual dimension que las muestras analizadas
- */
-function calculateDataMaxes(samples) {
-  let columnCount = samples[0].length;
-  let maxes = new Array(columnCount-1).fill(0);
+  constructor(samples, maxes, labels = null) {
+    this.samples = samples;
+    this.labels = labels;
+    this.dataMax = maxes;
 
-  for (let i = 0; i < samples.length; i++) {
-    const currentSample = samples[i];
-    for (let j = 0; j < columnCount - 1; j++) {
-      if (maxes[j] < currentSample[j]) maxes[j] = currentSample[j];
+    const _FEATURE_NAMES = [
+      "delta",
+      "theta",
+      "lowAlpha",
+      "highAlpha",
+      "lowBeta",
+      "highBeta",
+      "lowGamma",
+      "highGamma"
+    ];
+
+    this.FEATURE_NAMES = _FEATURE_NAMES;
+  }
+
+  concat(data2) {
+    if (isNullOrUndef(data2)) return;
+
+    let data1 = this;
+    data1.samples = data1.samples.concat(data2.samples);
+
+    if (isNullOrUndef(data1.labels) != isNullOrUndef(data2.labels)) {
+      throw 'No se puede concatenar, uno de los dataset esta dividido en muestras y etiquetas'
+    }
+
+    if (!isNullOrUndef(data1.labels) && !isNullOrUndef(data2.labels)) {
+      data1.labels = data1.labels.concat(data2.labels);
+    }
+
+    if (isNullOrUndef(data1.dataMax) || isNullOrUndef(data2.dataMax)) {
+      this.calculateDataMaxes();
+    }
+    else {
+      for (let i = 0; i < data1.dataMax.length; i++) {
+        if (data1.dataMax[i] < data2.dataMax[i]) {
+          data1.dataMax[i] = data2.dataMax[i];
+        }
+      }
     }
   }
 
-  return maxes;
+  /**
+   * Calcula los valores maximos para la coleccion de muestras de la instancia, por columnas
+   */
+  calculateDataMaxes(labelColumnCount = null) {
+
+    let localLabelColCount = labelColumnCount;
+
+    if (localLabelColCount == null && Array.isArray(this.labels) && this.labels.length > 0) {
+      let labelExtraction = this.labels[0];
+      localLabelColCount = Array.isArray(labelExtraction) ? labelExtraction.length : 1;
+    }
+    localLabelColCount = (localLabelColCount != null ? localLabelColCount : 0);
+
+    let featureColumnCount = this.samples[0].length - localLabelColCount;
+    let maxes = new Array(featureColumnCount).fill(0);
+
+    for (let i = 0; i < this.samples.length; i++) {
+      const currentSample = this.samples[i];
+      for (let j = 0; j < featureColumnCount; j++) {
+        if (maxes[j] < currentSample[j]) maxes[j] = currentSample[j];
+      }
+    }
+
+    this.dataMax = maxes;
+  }
+
+  summary() {
+    console.log("DATA SUMMARY");
+    console.log("============");
+
+    const samplesShape = getArrayShape(this.samples);
+    let maxes = {};
+    for (let i = 0; i < this.FEATURE_NAMES.length; i++) {
+      maxes[this.FEATURE_NAMES[i]] = this.dataMax[i];
+    }
+
+    if (this.labels != null && Array.isArray(this.labels)) {
+      const labelsShape = getArrayShape(this.labels);
+      console.log("Shapes Samples|Labels:", samplesShape, labelsShape);
+
+      console.log("Feature maxes:", maxes);
+    }
+    else {
+      console.log("Shapes Samples:", samplesShape);
+      console.log("Feature maxes:", maxes);
+    }
+  }
+
 }
+
+/* ****************************************************** */
+/* ****************************************************** */
+/* ****************************************************** */
+
+
 
 /**
  * Lee archivos pasados por parametro para luego convertirlos en objectos manejables y etiquetados
@@ -50,13 +156,16 @@ function loadJSON(fileData, settings) {
     minTolerance: 0,
     split: false,
     dataAugmentation: false,
-    applyFFT: true,
     dataAugmentationTotal: 1000,
+    normalization: true,
+    fourier: true,
+    deviationMatrix: false,
+    decimals: defaultDecimals
   }, settings);
 
   /* Maximos: Para validar la tolerancia de las lecturas */
-  const dataMax = [];
-  dataMax.fill(0, 0, 8);
+  const dataMax = new Array(8);
+  dataMax.fill(0);
 
   let samples = [];
   _.each(fileData, (fileSettings) => {
@@ -68,7 +177,7 @@ function loadJSON(fileData, settings) {
     let newData = data.
       filter(o => o.poorSignalLevel == 0).
       map((record) => {
-        /* Crea el objeto de datos */
+        /* Crea el array de la muestra */
         let dataItem = [
           record.eegPower.delta, /* delta */
           record.eegPower.theta, /* theta */
@@ -78,12 +187,12 @@ function loadJSON(fileData, settings) {
           record.eegPower.highBeta, /* highBeta */
           record.eegPower.lowGamma, /* lowGamma */
           record.eegPower.highGamma, /* highGamma */
-         /* Tipo movimiento */
+          /* Tipo movimiento */
           fileSettings.moveType, /* moveType */
         ];
 
         /* Actualiza maximo encontrado */
-        for(let i = 0; i < dataItem.length - 2; i++) {
+        for (let i = 0; i < dataItem.length - 2; i++) {
           if (dataMax[i] < dataItem[i]) dataMax[i] = dataItem[i];
         }
 
@@ -93,27 +202,70 @@ function loadJSON(fileData, settings) {
     samples = _.concat(samples, newData);
   });
 
-  let readData = {
-    samples,
-    dataMax
-  };
+  let readData = new ReadData(samples, dataMax);
+
+  const columnCount = 1;
+
+  debugger;
+  if (localSettings.fourier || localSettings.normalization) {
+    labelColumn = 8;
+    readData.samples = preProcess(readData.samples, labelColumn, localSettings);
+    readData.calculateDataMaxes(columnCount);
+  }
+
+  if (localSettings.minTolerance > 0) {
+    readData = filterData(readData, localSettings);
+  }
 
   if (localSettings.dataAugmentation) {
     readData = dataAugmentation(readData, localSettings);
+    readData.calculateDataMaxes(columnCount);
   }
 
-  if (localSettings.applyFFT) {
-    labelColumn = 8;
-    readData.samples = preProcess(readData.samples, labelColumn);
-    readData.dataMax = calculateDataMaxes(readData.samples);
+  if (localSettings.deviationMatrix) {
+    readData.FEATURE_NAMES = featureNamesForDevMatrix(readData.FEATURE_NAMES);
+    readData.calculateDataMaxes(columnCount);
   }
 
   if (localSettings.split) {
     return splitData(readData, localSettings);
   }
-  else {
-    return readData;
+
+  return readData;
+}
+
+function filterData(data, settings) {
+  const localSettings = Object.assign({
+    minTolerance: 0,
+  }, settings);
+
+  let finalSamples = []
+  const columnCount = 1;
+
+  /* Se normaliza cada variable de medicion en un rango de 0 a 1, 
+    *  usando su porcentaje respecto del maximo valor observado en toda la muestra
+    *  Si el valor observado supero el % de tolerancia, se lo considera valor aceptable y
+    *  se usan sus labels.
+    *  Si no se supera ese % de tolerancia minimo, se desactivan las labels (array de 0)
+    *  para descartar la muestra
+    */
+  for (let i = 0; i < data.samples.length; i++) {
+    const sample = data.samples[i];
+    const features = sample.slice(0, sample.length - columnCount); /* Sample array */
+
+    for (let featureIndex = 0; featureIndex < features.length; featureIndex++) {
+      let featureMax = data.dataMax[featureIndex];
+      let featureValue = features[featureIndex];
+      if (featureMax > 0 && featureValue / featureMax > localSettings.minTolerance) {
+        finalSamples.push(sample);
+        break;
+      }
+    }
   }
+
+  data.samples = finalSamples;
+
+  return data;
 
 }
 
@@ -127,7 +279,7 @@ function loadJSON(fileData, settings) {
 function splitData(data, settings) {
   const localSettings = Object.assign({
     shuffle: false,
-    minTolerance: 0,
+    minTolerance: 0
   }, settings);
 
   // Step 1. Shuffle the data
@@ -135,37 +287,20 @@ function splitData(data, settings) {
   if (localSettings.shuffle) { dataSamples = _.shuffle(dataSamples); }
 
   // Step 2. Split into samples and labels
-  const finalSamples = [];
-  const finalLabels = [];
+  let finalSamples = [];
+  let finalLabels = [];
   const labelColumnCount = 1;
 
   _.each(dataSamples, (dataArray) => {
-    let regularSample = dataArray.slice(0, dataArray.length - labelColumnCount);
-
-    /* Se normaliza cada variable de medicion en un rango de 0 a 1, 
-    *  usando su porcentaje respecto del maximo valor observado en toda la muestra
-    *  Si el valor observado supero el % de tolerancia, se lo considera valor aceptable y
-    *  se usan sus labels.
-    *  Si no se supera ese % de tolerancia minimo, se desactivan las labels (array de 0)
-    *  para descartar la muestra
-    */
-    for(let i = 0; i < regularSample.length; i++) {
-      let propertyMax = data.dataMax[i];
-      let propertyValue = regularSample[i];
-      
-      if (propertyMax > 0 && propertyValue / propertyMax > localSettings.minTolerance) {
-        finalSamples.push(regularSample);
-        finalLabels.push(dataArray[dataArray.length - 1]);
-        break;
-      }
-    }
-
+    const featureCount = dataArray.length - labelColumnCount;
+    finalSamples.push(dataArray.slice(0, featureCount));
+    finalLabels.push(dataArray.slice(featureCount));
   });
 
-  return {
-    samples: finalSamples,
-    labels: finalLabels
-  };
+  data.labels = finalLabels;
+  data.samples = finalSamples;
+
+  return data;
 }
 
 /**
@@ -183,6 +318,7 @@ function dataAugmentation(readData, settings) {
 
   // Pass in your real data vectors.
   const smote = new SMOTE(readData.samples);
+  console.log(readData.samples[0]);
 
   let newVectors;
   const labelColumnCount = 1;

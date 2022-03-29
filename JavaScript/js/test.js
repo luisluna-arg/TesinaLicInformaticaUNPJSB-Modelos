@@ -1,95 +1,84 @@
-const tf = require('@tensorflow/tfjs-node');
+const { MOVE_TYPE, loadJSON, splitData } = require('./load-training-json');
 const _ = require('lodash');
+const DecisionTree = require('decision-tree');
 
-class ConvNet_LSTM_1DConv {
-    constructor(baseSamples, baseLabels, options) {
-        if (typeof baseSamples == 'undefined' || baseSamples == null || baseSamples.length == 0) {
-            throw 'Coleccion de muestras no valida';
-        }
+/* ************************************************************** */
+/* ************************************************************** */
+/* ************************************************************** */
 
-        if (typeof baseLabels == 'undefined' || baseLabels == null || baseLabels.length == 0) {
-            throw 'Coleccion labels no valida';
-        }
+let loadingSettings = {
+    shuffle: true,
+    split: false,
+    decimals: 4,
+    normalization: true,
+    fourier: true,
+    deviationMatrix: true,
+    truncate: false,
+    dataAugmentation: false,
+    dataAugmentationTotal: 4000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
+};
 
-        let self = this;
+let message = "Lectura de datos" + (loadingSettings.dataAugmentation ? " (Con Data Augmentation)" : "")
+// console.log(message);
+// console.log("");
 
-        self.options = Object.assign({
-            verbose: false
-        }, options);
+const fileBasePath = '../data/Full';
+// const fileBasePath = './data/generated';
+// const fileBasePath = '../data/2022.1.14';
+// const fileBasePath = './data/2022.2.22';
+//const fileBasePath = '../data/2022.3.19_Brazos';
+// const fileBasePath = './data/2022.3.19_Cabeza';
 
-        self.compileSettings = {
-            optimizer: tf.train.adam(self.options.learningRate),
-            loss: tf.losses.sigmoidCrossEntropy,
-            weights: self.weights,
-            metrics: [tf.metrics.binaryAccuracy]
-        };
+let loadedData = loadJSON([{ file: fileBasePath + '/ABAJO.json', moveType: MOVE_TYPE.DOWN }], loadingSettings);
+loadedData.concat(loadJSON([{ file: fileBasePath + '/ARRIBA.json', moveType: MOVE_TYPE.UP }], loadingSettings));
+loadedData.concat(loadJSON([{ file: fileBasePath + '/IZQUIERDA.json', moveType: MOVE_TYPE.LEFT }], loadingSettings));
+loadedData.concat(loadJSON([{ file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }], loadingSettings));
 
-        baseSamples = this.normalize(baseSamples);
+/* ************************************************************** */
 
-        self.samples = tf.tensor(baseSamples);
-        self.labels = tf.tensor(baseLabels);
+console.log("Testings");
+console.log("========");
+console.log("");
 
-        const filterCount = 32;
-        const kernelSize = [3, 3];
-        const inputShape = [32, 32, 3];
-        self.n_classes = self.labels.shape[1];
+const CLASS_NAME = 'class';
 
-        self.model = tf.sequential([
-            tf.layers.conv2d({ filters: filterCount, kernelSize: kernelSize, activation: 'relu', padding: 'same', }),
-            tf.layers.conv2d({ filters: filterCount, kernelSize: kernelSize, activation: 'relu', padding: 'same', inputShape: inputShape }),
-            tf.layers.conv2d({ filters: filterCount, kernelSize: kernelSize, activation: 'relu', padding: 'same' }),
-            tf.layers.maxPooling2d({ pool_size: [2, 2], strides: 2 }),
-            tf.layers.flatten(),
-            tf.layers.dropout(0.5),
-            tf.layers.dense({ units: 512, activation: 'relu' }),
-            tf.layers.dropout(0.5),
-            tf.layers.dense({ units: self.n_classes, activation: 'softmax' })
-        ]);
+console.log("loadedData.samples[0]", loadedData.samples[0]);
+
+let fullSamples = loadedData.samples.map(sample => {
+    let obj = {};
+    let i;
+    for (i = 0; i < sample.length-1; i++) {
+        obj[loadedData.FEATURE_NAMES[i]] = sample[i];
     }
+    obj['class'] = sample[i];
 
-    normalize(samplesToNormalize) {
-        let tansposedFeatures = tf.tensor(samplesToNormalize).transpose().arraySync();
-        for (let i = 0; i < tansposedFeatures.length; i++) {
-            let currentSample = tansposedFeatures[i];
+    return obj;
+});
 
-            let temporalTensor = tf.tensor(currentSample);
+fullSamples = _.shuffle(fullSamples);
 
-            const inputMax = temporalTensor.max();
-            const inputMin = temporalTensor.min();
-            if (inputMax.sub(inputMin).dataSync() != 0) {
-                tansposedFeatures[i] = temporalTensor.sub(inputMin).div(inputMax.sub(inputMin)).dataSync();
-            }
-            else {
-                tansposedFeatures[i] = temporalTensor.dataSync();
-            }
+const trainingLength = Math.floor(fullSamples.length * 0.75);
+let trainSamples = fullSamples.slice(0, trainingLength);
+let testSamples = fullSamples.slice(trainingLength);
 
-        }
-        tansposedFeatures = tf.tensor(tansposedFeatures).transpose().arraySync();
+// console.log("trainSamples.slice(0, 5)", trainSamples.slice(0, 5));
+// console.log("trainSamples.length", trainSamples.length, "trainSamples[0]", trainSamples[0]);
+// console.log("testSamples.slice(0, 5)", testSamples.slice(0, 5));
+// console.log("testSamples.length", testSamples.length, "testSamples[0]", testSamples[0]);
 
-        return tansposedFeatures;
-    }
+let decisionTree = new DecisionTree(CLASS_NAME, loadedData.FEATURE_NAMES);
+decisionTree.train(trainSamples);
 
-    reformat_input(data, labels, indices) {
-        tf.util.shuffle(indices[0]);
-        tf.util.shuffle(indices[0]);
-        train_indices = indices[0].slice(0, len(indices[1]));
-        valid_indices = indices[0].slice(len(indices[1]));
-        test_indices = indices[1]
-        return [
-            (data[train_indices], np.squeeze(labels[train_indices]).astype(np.int32)),
-            (data[valid_indices], np.squeeze(labels[valid_indices]).astype(np.int32)),
-            (data[test_indices], np.squeeze(labels[test_indices]).astype(np.int32))
-        ];
-    }
+let trainAccuracy = decisionTree.evaluate(trainSamples);
+let testAccuracy = decisionTree.evaluate(testSamples);
 
-    async train(trainEndCallback) {
-        this.model.compile(this.compileSettings);
-        return await this.model.fit(this.samples, this.labels, {
-            batchSize: this.options.batchSize,
-            epochs: this.options.iterations,
-            verbose: false,
-            shuffle: this.options.shuffle,
-            callbacks: { onTrainEnd: trainEndCallback }
-        });
-    }
-}
+let labels = testSamples.map(o => o[CLASS_NAME]);
+let predictions = testSamples.map(o => decisionTree.predict(o));
+
+loadedData.summary()
+
+console.log("trainAccuracy", trainAccuracy);
+console.log("testAccuracy", testAccuracy);
+console.log("predictions", predictions);
+console.log("labels", labels);
