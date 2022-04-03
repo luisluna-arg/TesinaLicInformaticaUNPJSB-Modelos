@@ -2,12 +2,24 @@
 const tf = require('@tensorflow/tfjs-node');
 const _ = require('lodash');
 
-const labelMapper = (labelValue) => {
+/* ******************************************************** */
+
+const labelCount = 4;
+
+function  buildLabelArray(item) {
     let result = new Array(4);
     result.fill(0);
-    result[labelValue - 1] = 1;
+    result[item - 1] = 1;
     return result;
-};
+}
+
+function labelMapper(item) {
+    if (!Array.isArray(item)) return buildLabelArray(item);
+    
+    if (item.length === 1)  return buildLabelArray(item[0])
+    
+    return item;
+}
 
 const addLayers = (model, layers) => {
     for (let i = 0; i < layers.length; i++) {
@@ -18,6 +30,8 @@ const addLayers = (model, layers) => {
 const formatFloat = (value, decimals = 8) => parseFloat(value.toFixed(decimals));
 
 const formatFloatArray = (value, decimals = 8) => parseFloat(value.dataSync()[0].toFixed(decimals));
+
+/* ******************************************************** */
 
 class LogisticRegression {
 
@@ -46,7 +60,7 @@ class LogisticRegression {
 
         this.samples = tf.tensor(baseSamples);
         this.labels = tf.tensor(baseLabels.map(labelMapper));
-
+        
         const { mean, variance } = tf.moments(this.samples, 0);
         this.mean = mean;
         this.variance = variance;
@@ -61,7 +75,7 @@ class LogisticRegression {
         this.model = tf.sequential();
 
         addLayers(this.model, [
-            tf.layers.dense({ inputShape: [this.samples.shape[1]], units: 4, activation: "relu" })
+            tf.layers.dense({ inputShape: [this.samples.shape[1]], units: this.labels.shape[1], activation: "relu" })
         ]);
 
     }
@@ -83,7 +97,7 @@ class LogisticRegression {
 
         tf.tidy(() => {
             let testDataTensor = tf.tensor(testData);
-            let testLabelTensor = tf.tensor(testLabels.map(labelMapper));
+            let testLabelTensor = tf.tensor(testLabels);
 
             let result = this.model.evaluate(testDataTensor, testLabelTensor, {
                 batchSize: this.options.batchSize
