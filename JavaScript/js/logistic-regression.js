@@ -1,6 +1,31 @@
 const tf = require('@tensorflow/tfjs-node');
 const _ = require('lodash');
 
+/* ******************************************************** */
+/* ******************************************************** */
+/* ******************************************************** */
+
+const labelCount = 4;
+
+function buildLabelArray(item) {
+    let result = new Array(4);
+    result.fill(0);
+    result[item - 1] = 1;
+    return result;
+}
+
+function labelMapper(item) {
+    if (!Array.isArray(item)) return buildLabelArray(item);
+
+    if (item.length === 1) return buildLabelArray(item[0])
+
+    return item;
+}
+
+/* ******************************************************** */
+/* ******************************************************** */
+/* ******************************************************** */
+
 class LogisticRegression {
     constructor(baseSamples, baseLabels, options) {
         if (typeof baseSamples == 'undefined' || baseSamples == null || baseSamples.length == 0) {
@@ -19,7 +44,7 @@ class LogisticRegression {
         }, options);
 
         this.samples = this.processSamples(baseSamples);
-        this.labels = tf.tensor(baseLabels);
+        this.labels = tf.tensor(baseLabels.map(labelMapper));
 
         this.costHistory = []; // Cross-Entropy values
         this.weights = tf.ones([this.samples.shape[1], this.labels.shape[1]]);
@@ -61,8 +86,6 @@ class LogisticRegression {
             this.recordCost();
             this.updateLearningRate();
         }
-
-        console.log("Training complete");
     }
 
     gradientDescent(samplesToTreat, labelsToTreat) {
@@ -114,24 +137,25 @@ class LogisticRegression {
     }
 
     test(testFeatures, testLabels) {
-        let incorrect, predictionCount;
-        let testLabelsTensor = tf.tensor(testLabels);
-        let labelIndexTensor = testLabelsTensor.argMax(1);
-        const predictionTensor = this.predict(testFeatures);
-        const predictionIndexTensor = predictionTensor.argMax(1);
+        let testLabelsTensor = tf.tensor(testLabels.map(item => item[0]));
+        const labelTensor = this.predict(testFeatures);
+        const predictions = labelTensor.arraySync();
+        
+        const incorrect = testLabelsTensor.notEqual(labelTensor).sum().arraySync();
+        const predictionCount = predictions.length;
+        console.log("incorrect", incorrect, "predictionCount", predictionCount);
 
         if (this.options.verbose) {
             console.log("Comparacion resultados");
-            console.log("Esperado (ABAJO, ARRIBA, DERECHA, IZQUIERDA)");
-            console.log(testLabelsTensor.arraySync());
-            console.log("Predicho (ABAJO, ARRIBA, DERECHA, IZQUIERDA)");
-            console.log(predictionTensor.arraySync());
+            let comparison = testLabels.map((currentValue, index) => {
+                let singleValue = Array.isArray(currentValue) && currentValue.length == 1 ? currentValue[0] : currentValue;
+                let predictionValue = predictions[index];
+                return [singleValue, predictionValue, currentValue == predictionValue];
+            });
+            console.table(comparison);
         }
 
-        incorrect = predictionIndexTensor.notEqual(labelIndexTensor).sum().dataSync()[0];
-        predictionCount = predictionIndexTensor.shape[0];
-
-        return (predictionCount - incorrect) / predictionCount;
+        return { precision: (predictionCount - incorrect) / predictionCount };
     }
 
     normalize(samplesToNormalize) {
@@ -172,29 +196,17 @@ class LogisticRegression {
     }
 
     predict(samplesToPredict) {
-        /* Multiplica las feature por pesos, aplica Softmax para escalar, detecta el valor activado 
-        *  y transforma a arreglo de resultado
-        */
+        /* 
+         * Multiplica las feature por pesos, aplica Softmax para 
+         * escalar, detecta el valor activado y transforma a arreglo 
+         * de resultado
+         */
         let processedSamples = this.processSamples(samplesToPredict);
         let weightedSamples = processedSamples.matMul(this.weights);
         let partialResults = (this.options.useReLu ? weightedSamples.relu() : weightedSamples.softmax());
         let majorValueIndexTensor = partialResults.argMax(1);
 
-        /* Create the label array */
-        let resultData = majorValueIndexTensor.dataSync();
-        let dataForTensor = [];
-        for (let t = 0; t < resultData.length; t++) {
-            let result = _.fill(Array(4), 0);
-            result[resultData[t]] = 1;
-            dataForTensor.push(result);
-        }
-
-        processedSamples.dispose();
-        weightedSamples.dispose();
-        partialResults.dispose();
-        majorValueIndexTensor.dispose();
-
-        return tf.tensor(dataForTensor);
+        return tf.tensor(majorValueIndexTensor.arraySync().map(labelIndex => labelIndex + 1));
     }
 
     summary() {
