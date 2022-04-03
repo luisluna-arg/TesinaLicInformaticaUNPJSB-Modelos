@@ -206,7 +206,6 @@ function loadJSON(fileData, settings) {
 
   const columnCount = 1;
 
-  debugger;
   if (localSettings.fourier || localSettings.normalization) {
     labelColumn = 8;
     readData.samples = preProcess(readData.samples, labelColumn, localSettings);
@@ -318,7 +317,6 @@ function dataAugmentation(readData, settings) {
 
   // Pass in your real data vectors.
   const smote = new SMOTE(readData.samples);
-  console.log(readData.samples[0]);
 
   let newVectors;
   const labelColumnCount = 1;
