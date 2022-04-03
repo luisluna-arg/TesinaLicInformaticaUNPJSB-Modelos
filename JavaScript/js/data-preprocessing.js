@@ -162,7 +162,7 @@ function preProcess(data, labelColumnIndex, settings) {
         result = applyFFT(result, labelColumnIndex, localSettings);
     }
 
-    result = truncateNumerics(result, localSettings.decimals)
+    // result = truncateNumerics(result, localSettings.decimals)
 
     if (localSettings.deviationMatrix) {
         result = deviationMatrix(result, localSettings);
