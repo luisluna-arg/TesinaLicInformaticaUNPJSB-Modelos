@@ -127,12 +127,12 @@ switch (ModelType) {
     case methods.DECISION_TREE: {
         Object.assign(loadingSettings, {
             selectFeatures: true,
-            filter: false,
+            filter: true,
             truncate: true,
             decimals: 1,
             normalization: true,
             fourier: false,
-            deviationMatrix: false,
+            deviationMatrix: true,
             dataAugmentation: true,
             dataAugmentationTotal: 5000 /* Muestras totales por grupo de clase aumentado */
             });

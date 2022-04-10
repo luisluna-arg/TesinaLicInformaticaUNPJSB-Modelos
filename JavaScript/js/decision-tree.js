@@ -104,7 +104,7 @@ class DirectionDecisionTree {
 
             this.decisionTree = new DecisionTree(CLASS_NAME, this.FEATURE_NAMES);
             this.trainingLabels = trainingLabels;
-            this.trainingData = this.formatSamples(trainingSamples, this.trainingLabels);
+            this.trainingSamples = this.formatSamples(trainingSamples, this.trainingLabels);
         }
     }
 
@@ -114,8 +114,8 @@ class DirectionDecisionTree {
             return;
         }
 
-        this.decisionTree.train(this.trainingData);
-        this.trainAccuracy = this.decisionTree.evaluate(this.trainingData);
+        this.decisionTree.train(this.trainingSamples);
+        this.trainAccuracy = this.decisionTree.evaluate(this.trainingSamples);
     }
 
     test(testSamples, testLabels) {
@@ -127,13 +127,22 @@ class DirectionDecisionTree {
         let correct = 0;
         let comparison = [];
 
-        let labelCount = { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0 };
+        console.log("this.trainingSamples.length", this.trainingSamples.length);
+        console.log("this.trainingLabels.length", this.trainingLabels.length);
+        console.log("this.trainingLabels.filter(o => o < 1)", this.trainingLabels.filter(o => o < 1));
+
+        this.predictedLabelCount = { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0, 'undefined': 0 };
+        this.actualLabelCount = { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0, 'undefined': 0 };
         for (let i = 0; i < testSamples.length; i++) {
             const sample = testSamples[i];
             const label = testLabels[i];
+            this.actualLabelCount[label]++;
 
             let predictedLabel = this.predict(sample);
-            labelCount[predictedLabel.toString()]++;
+            // console.log("predictedLabel", predictedLabel);
+            // console.log("sample", sample);
+            // console.log("label", label);
+            this.predictedLabelCount[predictedLabel]++;
 
             const equals = predictedLabel == label;
             correct += equals ? 1 : 0;
@@ -157,9 +166,12 @@ class DirectionDecisionTree {
         console.log("");
         console.log("Summary");
         console.log("=======");
-        console.log("Samples", this.trainingData.length);
+        console.log("Samples", this.trainingSamples.length);
         console.log("Feature count", this.FEATURE_NAMES.length);
+        console.log("Training Accuracy", floatToFixed(this.trainAccuracy * 100).toString() + '%');
         console.log("Test Accuracy", floatToFixed(this.testAccuracy * 100).toString() + '%');
+        console.log("Predicted label count", this.predictedLabelCount);
+        console.log("Actual label count", this.actualLabelCount);
         console.log("");
     }
 

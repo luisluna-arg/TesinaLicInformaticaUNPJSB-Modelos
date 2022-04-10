@@ -89,14 +89,14 @@ function dataAugmentation(samples, settings) {
     const byLabel = _.groupBy(samples, (item) => item[item.length - 1]);
 
     for (const label in byLabel) {
-        console.log("label", label);
+        // console.log("label", label);
         let labelGroup = byLabel[label].map(sample => sample.slice(0, sample.length - 1));
         const countToGenerate = settings.dataAugmentationTotal - labelGroup.length;
-        console.log("byLabel[label]", byLabel[label][0]);
+        // console.log("byLabel[label]", byLabel[label][0]);
         // console.log("label", label, typeof (label));
         // console.log("settings.dataAugmentationTotal", settings.dataAugmentationTotal);
-        console.log("labelGroup.length", labelGroup.length);
-        console.log("labelGroup[0]", labelGroup[0]);
+        // console.log("labelGroup.length", labelGroup.length);
+        // console.log("labelGroup[0]", labelGroup[0]);
         // console.log("countToGenerate", countToGenerate);
 
         if (countToGenerate <= 0) return labelGroup;
@@ -167,12 +167,14 @@ function deviationMatrix(data, settings) {
     let devMatrix = [];
 
     tf.tidy(() => {
+        const correlateAll = true; // Correlacionar todas las columnas
         for (let i = 0; i < data.length; i++) {
-            const features = data[i].slice(0, data[i].length - 1);
-            const label = data[i].slice(data[i].length - 1)[0];
+            const currentData = data[i];
+            const features = currentData.slice(0, currentData.length - 1);
+            const label = currentData.slice(currentData.length - 1)[0];
 
-            // const sample = data[i];
-            const sample = features;
+            // CorrelateAll incluye la columna de clase
+            const sample = correlateAll ? currentData : features;
 
             const featureTensor = tf.tensor1d(sample);
             const { mean, variance } = tf.moments(featureTensor);
@@ -263,7 +265,7 @@ function filterCorrelationMatrix(data, featureNames) {
     // console.log("features", features[0]);
    
     const correlationResult = correlation.calculateCorrelation(features);
-    console.log("correlationResult", correlationResult);
+    // console.log("correlationResult", correlationResult);
 
     let newResult = [];
     let newFeatureNames = [];
@@ -271,7 +273,7 @@ function filterCorrelationMatrix(data, featureNames) {
         const avgMap = correlationResult.map(item => {
             return (_.sum(item) - 1) / (item.length - 1);
         });
-        console.log("avgMap", avgMap);
+        // console.log("avgMap", avgMap);
 
         const { mean } = tf.moments(avgMap);
         // console.log("mean", mean.arraySync());
@@ -311,7 +313,7 @@ function shuffle(samples) {
  */
 function preProcess(data, dataFeatureNames, settings) {
 
-    console.log("preProcess");
+    // console.log("preProcess");
 
     let localSettings = Object.assign({
         filter: false,
@@ -322,7 +324,7 @@ function preProcess(data, dataFeatureNames, settings) {
         decimals: defaultDecimals
     }, settings);
 
-    console.log("localSettings", localSettings);
+    // console.log("localSettings", localSettings);
 
     let result = data;
     
@@ -333,14 +335,9 @@ function preProcess(data, dataFeatureNames, settings) {
     }
 
     if (localSettings.filter) {
-        result = filterDeviation(result);
-        // result = remapClass(result);
+        // result = filterDeviation(result);
+        result = remapClass(result);
         // result = filterNone(result);
-    }
-
-    if (localSettings.dataAugmentation) {
-        console.log("dataAugmentation.result", result[0]);
-        result = dataAugmentation(result, localSettings);
     }
 
     if (localSettings.fourier || localSettings.normalization) {
@@ -349,6 +346,11 @@ function preProcess(data, dataFeatureNames, settings) {
 
     if (localSettings.fourier) {
         result = applyFFT(result, localSettings);
+    }
+
+    if (localSettings.dataAugmentation) {
+        // console.log("dataAugmentation.result", result[0]);
+        result = dataAugmentation(result, localSettings);
     }
 
     if (localSettings.deviationMatrix) {
