@@ -240,7 +240,7 @@ class NaiveBayes {
 
         for (let i = 0; i < testFeatures.length; i++) {
             const sample = testFeatures[i];
-            const expectedLabelArray = testLabels[i];
+            const expectedLabelArray = testLabels[i][0];
             const predictionLabelArray = self.predict(sample);
 
             const predictionResult = [predictionLabelArray, expectedLabelArray, _.isEqual(predictionLabelArray, expectedLabelArray)];
@@ -250,11 +250,11 @@ class NaiveBayes {
             predictionsValues.push(predictionLabelArray);
             labelValues.push(expectedLabelArray);
         }
-        
+
         const total = predictions.length;
         const correct = predictions.filter(o => o[2]).length;
         let precision = formatFloat(correct / total * 100);
-
+               
         const { mean, variance } = tf.moments(predictionsValues, 0);
         let varianceVal = formatFloatArray(variance);
         let devStd = formatFloatArray(tf.sqrt(varianceVal));

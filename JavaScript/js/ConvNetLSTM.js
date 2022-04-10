@@ -81,7 +81,8 @@ class ConvNetLSTM {
 
         let expandedSamples = expandSamples(trainingSamples)
         this.samples = tf.tensor(expandedSamples);
-        this.labels = tf.tensor(labelsToArrays(trainingLabels));
+        // this.labels = tf.tensor(labelsToArrays(trainingLabels));
+        this.labels = tf.tensor(trainingLabels);
 
         /* Define model compilation settings */
         this.compileSettings = {
@@ -92,52 +93,55 @@ class ConvNetLSTM {
 
         // Defines a simple logistic regression model with 32 dimensional input
         // and 3 dimensional output.
-        let inputShape = this.samples.shape[1];
-        let outputShape = this.labels.shape.length == 1 ? 1 : this.labels.shape[1];
-
+        
         const addLayers = (model, layers) => {
             for (let i = 0; i < layers.length; i++) {
                 model.add(layers[i]);
             }
         }
 
-        const units = 128;
         const dropout = 0.2;
         const recurrentDropout = 0.2;
-        const numClasses = 4;
-
+        const lstmUnits = 128;
 
         this.model = tf.sequential();
 
         let lstmLayer = tf.layers.lstm({
-            units: units, dropout: dropout,
-            recurrentDropout: recurrentDropout,
-            returnSequences: true
+            units: lstmUnits, dropout: dropout, 
+            recurrentDropout: recurrentDropout, returnSequences: true
         });
         let lstmLayerNoSeq = tf.layers.lstm({
-            units: units, dropout: dropout,
-            recurrentDropout: recurrentDropout,
-            returnSequences: false
+            units: lstmUnits, dropout: dropout, recurrentDropout: recurrentDropout, returnSequences: false
         });
 
+        let conv1dACfg = { filters: 32, kernelSize: 8, strides: 1, activation: "relu", padding: "same" };
+        let conv1dBCfg = { filters: 16, kernelSize: 8, strides: 1, activation: "relu", padding: "same" };
         console.log("this.samples.shape", this.samples.shape);
 
+        const inputShape = [ this.samples.shape[1], this.samples.shape[this.samples.shape.length - 1] ];
+        const outputShape = [ this.labels.shape[0], this.labels.shape[this.labels.shape.length - 1] ];
+        console.log("inputShape", inputShape, 'outputShape', outputShape);
+
         addLayers(this.model, [
-            tf.layers.inputLayer({ inputShape: [ this.samples.shape[1], this.samples.shape[2] ] }),
-            // tf.layers.conv1d({ filters: 32, kernelSize: 8, strides: 1, activation: "relu", padding: "same" }),
-            // // tf.layers.maxPooling1d({ poolSize: 2 }),
-            // // tf.layers.conv1d({ filters: 16, kernelSize: 8, strides: 1, activation: "relu", padding: "same" }),
-            // // tf.layers.maxPooling1d({ pool_size: 2 }),
-            // // tf.layers.masking({ maskValue: 0.0 }),
-            // lstmLayer,
-            // // tf.layers.bidirectional({ layer: lstmLayer }),
-            // // tf.layers.bidirectional({ layer: lstmLayer }),
-            // // tf.layers.bidirectional({ layer: lstmLayerNoSeq }),
-            // tf.layers.dense({ units: 30, activation: 'relu' }),
-            // tf.layers.dense({ units: 10, activation: 'relu' }),
-            // tf.layers.dense({ units: numClasses, activation: 'softmax' })
+            tf.layers.inputLayer({ inputShape: inputShape }),
+            tf.layers.conv1d(conv1dACfg),
+            tf.layers.maxPooling1d({ poolSize: 2 }),
+            tf.layers.conv1d(conv1dBCfg),
+            tf.layers.maxPooling1d({ pool_size: 2 }),
+            tf.layers.masking({ maskValue: 0.0 }),
+            lstmLayer,
+            tf.layers.bidirectional({ layer: lstmLayer }),
+            tf.layers.bidirectional({ layer: lstmLayer }),
+            tf.layers.bidirectional({ layer: lstmLayerNoSeq }),
+            tf.layers.dense({ units: 30, activation: 'relu' }),
+            tf.layers.dense({ units: 10, activation: 'relu' }),
+            tf.layers.dense({ inputShape: inputShape, units: 1, activation: 'softmax' })
         ]);
+
     }
+
+
+    
 
     async train(trainEndCallback) {
         this.model.compile(this.compileSettings);
@@ -158,7 +162,8 @@ class ConvNetLSTM {
 
         tf.tidy(() => {
             let testDataTensor = tf.tensor(expandSamples(testData));
-            let testLabelTensor = tf.tensor(labelsToArrays(testLabels));
+            // let testLabelTensor = tf.tensor(labelsToArrays(testLabels));
+            let testLabelTensor = tf.tensor(testLabels);
 
             console.log("testDataTensor.shape", testDataTensor.shape);
             console.log("testLabelTensor.shape", testLabelTensor.shape);
@@ -197,8 +202,10 @@ class ConvNetLSTM {
             let predictionsValues = [];
             let labelValues = [];
 
-            for (let i = 0; i < testData.length; i++) {
-                const dataItem = testData[i];
+            let testDataExpanded = testDataTensor.arraySync();
+            for (let i = 0; i < testDataExpanded.length; i++) {
+                const dataItem = testDataExpanded[i];
+                console.log("dataItem", dataItem);
 
                 let prediction = this.predict(dataItem);
 

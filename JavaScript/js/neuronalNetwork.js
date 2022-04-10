@@ -86,7 +86,7 @@ class NeuronalNetwork {
         this.model.compile(this.compileSettings);
 
         return await this.model.fit(this.samples, this.labels, {
-            epochs: this.options.iterations,
+            epochs: this.options.epochs,
             stepsPerEpoch: this.options.stepsPerEpoch,
             validationSteps: this.options.validationSteps,
             verbose: this.options.verbose,
@@ -139,7 +139,7 @@ class NeuronalNetwork {
 
                 let prediction = this.predict(dataItem);
 
-                const expectedLabel = testLabels[i];
+                const expectedLabel = testLabels[i][0];
                 const predictionResult = [prediction, expectedLabel, _.isEqual(prediction, expectedLabel)];
 
                 predictions.push(predictionResult);
@@ -149,7 +149,9 @@ class NeuronalNetwork {
             }
 
             if (this.options.verbose) {
-                console.log(predictions);
+                // for(let i = 0; i < predictions.length; i++) {
+                //     console.log("predictions[" + i + "]", predictions[i]);
+                // }
             }
 
             const total = predictions.length;
@@ -157,7 +159,7 @@ class NeuronalNetwork {
             precision = correct / total * 100;
         });
 
-        return precision;
+        return { precision };
     }
 
     predict(dataItem) {

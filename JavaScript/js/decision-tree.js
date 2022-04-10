@@ -2,6 +2,7 @@ const DecisionTree = require('decision-tree');
 
 const tf = require('@tensorflow/tfjs-node');
 const _ = require('lodash');
+const { isNull } = require('lodash');
 
 
 /* ****************************************************** */
@@ -113,29 +114,39 @@ class DirectionDecisionTree {
             return;
         }
 
-        let localTrainingData = this.trainingData;
-        this.decisionTree.train(localTrainingData);
-        this.trainAccuracy = this.decisionTree.evaluate(localTrainingData);
+        this.decisionTree.train(this.trainingData);
+        this.trainAccuracy = this.decisionTree.evaluate(this.trainingData);
     }
 
     test(testSamples, testLabels) {
         if (testSamples.length == 0) return 0;
+        
+        let currentSamples = this.createSamples(testSamples, testLabels);
+        this.testAccuracy = this.decisionTree.evaluate(currentSamples);
 
-        this.testAccuracy = this.decisionTree.evaluate(this.createSamples(testSamples, testLabels));
-
-        let incorrect = 0;
+        let correct = 0;
         let comparison = [];
 
+        let labelCount = { '0': 0, '1': 0, '2': 0, '3': 0, '4': 0 };
         for (let i = 0; i < testSamples.length; i++) {
             const sample = testSamples[i];
-            const label = testLabels[i][0];
+            const label = testLabels[i];
 
-            let predictedClass = this.predict(sample)[0];
-            incorrect += predictedClass === label ? 0 : 1;
-            comparison.push([label, predictedClass]);
+            let predictedLabel = this.predict(sample);
+            labelCount[predictedLabel.toString()]++;
+
+            const equals = predictedLabel == label;
+            correct += equals ? 1 : 0;
+            comparison.push([label, predictedLabel, equals]);
         }
 
-        return { precision: (testSamples.length - incorrect) / testSamples.length * 100 };
+        const result = { 
+            testLength: testSamples.length,
+            correct,
+            precision: correct / testSamples.length
+        };
+
+        return result;
     }
 
     predict(predictionSample) {
@@ -148,7 +159,7 @@ class DirectionDecisionTree {
         console.log("=======");
         console.log("Samples", this.trainingData.length);
         console.log("Feature count", this.FEATURE_NAMES.length);
-        console.log("Test Accuracy", floatToFixed(this.testAccuracy * 100));
+        console.log("Test Accuracy", floatToFixed(this.testAccuracy * 100).toString() + '%');
         console.log("");
     }
 
@@ -178,9 +189,6 @@ class DirectionDecisionTree {
             results.push(sampleInstance);
         }
         return results;
-
-
-        // return sampleValues;
     }
 
     formatSamples(samplesToFormat, sampleLabels) {

@@ -3,7 +3,7 @@
  * Cambiar ModelType para alternar entre modelos manual y de capas
  */
 
-const { MOVE_TYPE, loadJSON, splitData } = require('./js/load-training-json');
+const { MOVE_TYPE, loadJSON, splitData, dataPreProcessing } = require('./js/load-training-json');
 const _ = require('lodash');
 
 /* ************************************************************** */
@@ -20,7 +20,7 @@ const methods = {
     CONV_NET_LSTM: enumValue++,
     NET_LSTM: enumValue++,
     /* ************************* */
-    TF_COREAPI: enumValue++,
+    TF_COREAPI: enumValue++, 
 }
 
 
@@ -87,7 +87,7 @@ const loadModel = (modelType) => {
 
 
 /* Definir modelo a usar */
-const ModelType = methods.TF_LAYERMODEL;
+const ModelType = methods.DECISION_TREE;
 const ModelClass = loadModel(ModelType)
 
 
@@ -95,42 +95,64 @@ const ModelClass = loadModel(ModelType)
 /* ************************************************************** */
 /* ************************************************************** */
 
+let defaultSettings = {
+    filter: false,
+    shuffle: true,
+    split: false,
+    truncate: false,
+    decimals: 2,
+    normalization: false,
+    fourier: false,
+    deviationMatrix: false,
+    dataAugmentation: false,
+    selectFeatures: false,
+    dataAugmentationTotal: 40000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
+};
+
 let loadingSettings = {};
+Object.assign(loadingSettings, defaultSettings);
+
 switch (ModelType) {
-    case methods.DECISION_TREE: {
+    case methods.NAIVE_BAYES: {
         Object.assign(loadingSettings, {
-            shuffle: true,
-            split: false,
             truncate: false,
             decimals: 4,
             normalization: false,
-            fourier: true,
-            deviationMatrix: true,
-            dataAugmentation: true,
-            dataAugmentationTotal: 1000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
-            minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
+            fourier: false,
+            deviationMatrix: false
         });
         break;
     }
-    default: {
+    case methods.DECISION_TREE: {
         Object.assign(loadingSettings, {
-            shuffle: true,
-            split: false,
-            truncate: false,
-            decimals: 5,
-            normalization: false,
+            selectFeatures: true,
+            filter: false,
+            truncate: true,
+            decimals: 1,
+            normalization: true,
             fourier: false,
             deviationMatrix: false,
             dataAugmentation: true,
-            dataAugmentationTotal: 1000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
-            minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
-        });
+            dataAugmentationTotal: 5000 /* Muestras totales por grupo de clase aumentado */
+            });
+        break;
+    }
+    case methods.TF_COREAPI: {
+        Object.assign(loadingSettings, {
+            truncate: true,
+            decimals: 4,
+            normalization: true,
+            fourier: true,
+            deviationMatrix: true,
+            dataAugmentation: true,
+            dataAugmentationTotal: 50000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+            });
         break;
     }
 }
 
-let message = "Lectura de datos" + (loadingSettings.dataAugmentation ? " (Con Data Augmentation)" : "")
-printHeader(message);
+printHeader("Lectura de datos" + (loadingSettings.dataAugmentation ? " (Con Data Augmentation)" : ""));
 
 const fileBasePath = './data/Full';
 // const fileBasePath = './data/generated';
@@ -140,10 +162,41 @@ const fileBasePath = './data/Full';
 
 let loadedData = null;
 
-loadedData = loadJSON([{ file: fileBasePath + '/ABAJO.json', moveType: MOVE_TYPE.DOWN }], loadingSettings);
-loadedData.concat(loadJSON([{ file: fileBasePath + '/ARRIBA.json', moveType: MOVE_TYPE.UP }], loadingSettings));
-loadedData.concat(loadJSON([{ file: fileBasePath + '/IZQUIERDA.json', moveType: MOVE_TYPE.LEFT }], loadingSettings));
-loadedData.concat(loadJSON([{ file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }], loadingSettings));
+/* Carga de datos sin ningun tipo de procesamiento */
+function loadData(moveType) {
+    let fileNames = {};
+    fileNames[MOVE_TYPE.DOWN] = '/ABAJO.json';
+    fileNames[MOVE_TYPE.UP] = '/ARRIBA.json';
+    fileNames[MOVE_TYPE.LEFT] = '/IZQUIERDA.json';
+    fileNames[MOVE_TYPE.RIGHT] = '/DERECHA.json';
+
+    let filePath = fileBasePath + fileNames[moveType];
+
+    return loadJSON([{ file: filePath, moveType }], defaultSettings);
+}
+
+loadedData = loadData(MOVE_TYPE.DOWN);
+loadedData.concat(loadData(MOVE_TYPE.UP));
+loadedData.concat(loadData(MOVE_TYPE.LEFT));
+loadedData.concat(loadData(MOVE_TYPE.RIGHT));
+
+// loadedData = dataAugmentation(loadJSON([{ file: fileBasePath + '/ABAJO.json', moveType: MOVE_TYPE.DOWN }], defaultSettings), defaultSettings);
+// loadedData.concat(dataAugmentation(loadJSON([{ file: fileBasePath + '/ARRIBA.json', moveType: MOVE_TYPE.UP }], defaultSettings), defaultSettings));
+// loadedData.concat(dataAugmentation(loadJSON([{ file: fileBasePath + '/IZQUIERDA.json', moveType: MOVE_TYPE.LEFT }], defaultSettings), defaultSettings));
+// loadedData.concat(dataAugmentation(loadJSON([{ file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }], defaultSettings), defaultSettings));
+console.log("");
+loadedData.calculateDataMaxes();
+loadedData.summary();
+
+// printHeader("Samples")
+// console.log(loadedData.samples);
+
+/* Una vez cargados, aplicar preprocesamientos, excepto data augmentation */
+printHeader("Preprocesamiento de datos");
+loadedData = dataPreProcessing(loadedData, loadingSettings);
+
+console.log("");
+console.log("Loading Settings", loadingSettings);
 
 let start = loadedData.samples.length - 2005;
 start = start < 0 ? 0 : start;
@@ -184,10 +237,10 @@ const decisionTreeSettings = {
 const neuroSettings = {
     MoveTypeEnum: MOVE_TYPE,
     verbose: true,
-    epochs: 10,
-    stepsPerEpoch: 500,
-    validationSteps: 2,
-    learningRate: 0.5
+    epochs: 5,
+    stepsPerEpoch: 20,
+    validationSteps: 100,
+    learningRate: 0.00000005
 };
 
 const NetLSTMSettings = {
@@ -198,17 +251,11 @@ const NetLSTMSettings = {
 
 const trainingExerciseCount = 1;
 
-// console.log("Regression Settings (Core): " + JSON.stringify(regressionSettingsCoreModel));
-// console.log("Split Data Settings: " + JSON.stringify(loadingSettings));
-// console.log("");
-
 let promises = [];
 let testings = [];
 
-// console.log("Inicio", new Date());
-
 for (let i = 0; i < trainingExerciseCount; i++) {
-    let { samples, labels } = splitData(loadedData, loadingSettings);
+    const { samples, labels } = splitData(loadedData);
 
     /* Data de entrenamiento */
     const trainingLength = Math.floor(samples.length * 0.7);
@@ -240,6 +287,8 @@ for (let i = 0; i < trainingExerciseCount; i++) {
             regression.train();
             let result = regression.test(testData, testLabels);
             testings.push(result);
+            console.log("Precision [" + (i + 1) + "]", result);
+
             regression.summary();
             break;
         }
@@ -263,18 +312,25 @@ for (let i = 0; i < trainingExerciseCount; i++) {
         case methods.DECISION_TREE: {
             printSubHeader("Crear Arbol mediante muestras");
 
+            console.log("Training.length", trainingData.length);
+            console.log("Training", trainingData[0]);
+            console.log("Test.length", testData.length);
+            console.log("Test", testData[0]);
+            loadedData.summary();
+
             const decisionTree = new ModelClass(trainingData, trainingLabels, loadedData.FEATURE_NAMES, decisionTreeSettings);
             decisionTree.train();
             let result = decisionTree.test(testData, testLabels);
             testings.push(result);
             console.log("Precision [" + (i + 1) + "]", parseFloat(result.precision.toFixed(8)));
-            let localJson = decisionTree.toJSON();
+            
+            // let localJson = decisionTree.toJSON();
 
-            printSubHeader("Crear Arbol mediante JSON");
-            const decisionTreeJSON = new ModelClass(localJson, loadedData.FEATURE_NAMES);
-            decisionTreeJSON.train();
-            let JSONResult = decisionTreeJSON.test(testData, testLabels);
-            console.log("Precision JSON [" + (i + 1) + "]", parseFloat(JSONResult.precision.toFixed(8)));
+            // printSubHeader("Crear Arbol mediante JSON");
+            // const decisionTreeJSON = new ModelClass(localJson, loadedData.FEATURE_NAMES);
+            // decisionTreeJSON.train();
+            // let JSONResult = decisionTreeJSON.test(testData, testLabels);
+            // console.log("Precision JSON [" + (i + 1) + "]", parseFloat(JSONResult.precision.toFixed(8)));
 
             decisionTree.summary();
 
@@ -284,10 +340,13 @@ for (let i = 0; i < trainingExerciseCount; i++) {
             printSubHeader("Red neuronal");
             // NeuronalNetwork
             const neuro = new ModelClass(trainingData, trainingLabels, neuroSettings);
-            neuro.train();
-            let result = neuro.test(testData, testLabels);
-            testings.push(result);
-            // console.log("Precision [" + (i + 1) + "]", result);
+            promises.push(
+                neuro.train(function (logs) {
+                    let result = neuro.test(testData, testLabels);
+                    testings.push(result);
+                    neuro.summary();
+                })
+            );
             break;
         }
         case methods.CONV_NET_LSTM: {
@@ -322,17 +381,16 @@ for (let i = 0; i < trainingExerciseCount; i++) {
 const rounding = 2;
 
 function showResults(currentResults) {
-    // console.log("showResults.currentResults", currentResults);
     let precision = currentResults.map(o => o.precision);
 
     console.log("Promedio: " + _.round((_.sum(precision) / precision.length), rounding) +
         ", Min: " + _.round(_.min(precision), rounding) +
         ", Max: " + _.round(_.max(precision), rounding)
     );
-    // console.log("Fin", new Date());
 }
 
-if (ModelType == methods.TF_LAYERMODEL) {
+let promiseModels = [methods.TF_LAYERMODEL, methods.NEURO, methods.TF_LAYERMODEL];
+if (promiseModels.filter(o => o == ModelType)) {
     Promise.all(promises).then(results => { showResults(testings); });
 } else {
     showResults(testings);

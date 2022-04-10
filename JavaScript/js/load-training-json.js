@@ -1,7 +1,5 @@
-const tf = require('@tensorflow/tfjs-node');
 const fs = require('fs');
 const _ = require('lodash');
-const SMOTE = require('smote');
 const { preProcess } = require('./data-preprocessing');
 
 /* ****************************************************** */
@@ -113,6 +111,17 @@ class ReadData {
     this.dataMax = maxes;
   }
 
+  getLabelCount = function(data) {
+    const labelGetter = (labelContainer) => Array.isArray(labelContainer) ? labelContainer[labelContainer.length - 1] : labelContainer;
+    let labelCount = {};
+    data.forEach(item => { 
+      const label = labelGetter(item);
+      if (isNullOrUndef(labelCount[label])) labelCount[label] = 0;
+      labelCount[label]++;
+    });
+    return labelCount;
+  };
+
   summary() {
     console.log("DATA SUMMARY");
     console.log("============");
@@ -125,14 +134,19 @@ class ReadData {
 
     if (this.labels != null && Array.isArray(this.labels)) {
       const labelsShape = getArrayShape(this.labels);
-      console.log("Shapes Samples|Labels:", samplesShape, labelsShape);
+      let labelCount = this.getLabelCount(this.labels);
 
+      console.log("Shapes Samples|Labels:", samplesShape, labelsShape);
       console.log("Feature maxes:", maxes);
+      // console.log("Label count:", labelCount);
     }
     else {
+      let labelCount = this.getLabelCount(this.samples);
       console.log("Shapes Samples:", samplesShape);
       console.log("Feature maxes:", maxes);
+      // console.log("Label count:", labelCount);
     }
+
   }
 
 }
@@ -150,7 +164,6 @@ class ReadData {
  * @returns Datos leídos. Separados en features y labels según settings.
  */
 function loadJSON(fileData, settings) {
-
   const localSettings = Object.assign({
     shuffle: false,
     minTolerance: 0,
@@ -204,69 +217,74 @@ function loadJSON(fileData, settings) {
 
   let readData = new ReadData(samples, dataMax);
 
-  const columnCount = 1;
-
-  if (localSettings.fourier || localSettings.normalization) {
-    labelColumn = 8;
-    readData.samples = preProcess(readData.samples, labelColumn, localSettings);
-    readData.calculateDataMaxes(columnCount);
-  }
-
-  if (localSettings.minTolerance > 0) {
-    readData = filterData(readData, localSettings);
-  }
-
-  if (localSettings.dataAugmentation) {
-    readData = dataAugmentation(readData, localSettings);
-    readData.calculateDataMaxes(columnCount);
-  }
-
-  if (localSettings.deviationMatrix) {
-    readData.FEATURE_NAMES = featureNamesForDevMatrix(readData.FEATURE_NAMES);
-    readData.calculateDataMaxes(columnCount);
-  }
+  readData = dataPreProcessing(readData, localSettings);
 
   if (localSettings.split) {
-    return splitData(readData, localSettings);
+    return splitData(readData);
   }
 
   return readData;
 }
 
-function filterData(data, settings) {
-  const localSettings = Object.assign({
-    minTolerance: 0,
-  }, settings);
-
-  let finalSamples = []
+function dataPreProcessing(readData, localSettings) {
   const columnCount = 1;
 
-  /* Se normaliza cada variable de medicion en un rango de 0 a 1, 
-    *  usando su porcentaje respecto del maximo valor observado en toda la muestra
-    *  Si el valor observado supero el % de tolerancia, se lo considera valor aceptable y
-    *  se usan sus labels.
-    *  Si no se supera ese % de tolerancia minimo, se desactivan las labels (array de 0)
-    *  para descartar la muestra
-    */
-  for (let i = 0; i < data.samples.length; i++) {
-    const sample = data.samples[i];
-    const features = sample.slice(0, sample.length - columnCount); /* Sample array */
+  console.log("dataPreProcessing.readData", readData.samples.length);
+  console.log("dataPreProcessing.readData.samples[0]", readData.samples[0].length);
+  console.log("dataPreProcessing.readData.FEATURE_NAMES", readData.FEATURE_NAMES.length);
 
-    for (let featureIndex = 0; featureIndex < features.length; featureIndex++) {
-      let featureMax = data.dataMax[featureIndex];
-      let featureValue = features[featureIndex];
-      if (featureMax > 0 && featureValue / featureMax > localSettings.minTolerance) {
-        finalSamples.push(sample);
-        break;
-      }
-    }
+  // if (localSettings.minTolerance > 0) {
+  //   readData = filterData(readData, localSettings);
+  // }
+  
+  let { result, featureNames } = preProcess(readData.samples, readData.FEATURE_NAMES, localSettings);
+
+  readData.samples = result;
+  readData.FEATURE_NAMES = featureNames;
+
+  if (localSettings.deviationMatrix) {
+    readData.FEATURE_NAMES = featureNamesForDevMatrix(readData.FEATURE_NAMES);
   }
 
-  data.samples = finalSamples;
+  readData.calculateDataMaxes(columnCount);
 
-  return data;
-
+  return readData;
 }
+
+// function filterData(data, settings) {
+//   const localSettings = Object.assign({
+//     minTolerance: 0,
+//   }, settings);
+
+//   let finalSamples = []
+//   const columnCount = 1;
+
+//   /* Se normaliza cada variable de medicion en un rango de 0 a 1, 
+//     *  usando su porcentaje respecto del maximo valor observado en toda la muestra
+//     *  Si el valor observado supero el % de tolerancia, se lo considera valor aceptable y
+//     *  se usan sus labels.
+//     *  Si no se supera ese % de tolerancia minimo, se desactivan las labels (array de 0)
+//     *  para descartar la muestra
+//     */
+//   for (let i = 0; i < data.samples.length; i++) {
+//     const sample = data.samples[i];
+//     const features = sample.slice(0, sample.length - columnCount); /* Sample array */
+
+//     for (let featureIndex = 0; featureIndex < features.length; featureIndex++) {
+//       let featureMax = data.dataMax[featureIndex];
+//       let featureValue = features[featureIndex];
+//       if (featureMax > 0 && featureValue / featureMax > localSettings.minTolerance) {
+//         finalSamples.push(sample);
+//         break;
+//       }
+//     }
+//   }
+
+//   data.samples = finalSamples;
+
+//   return data;
+
+// }
 
 /**
  * Aleatoriza los datos y los separa en arreglos de muestras y etiquetas
@@ -275,76 +293,30 @@ function filterData(data, settings) {
  * @param settings Settings generales para carga de archivo
  * @returns Data separada en muestras y etiquetas
  */
-function splitData(data, settings) {
-  const localSettings = Object.assign({
-    shuffle: false,
-    minTolerance: 0
-  }, settings);
-
-  // Step 1. Shuffle the data
-  let dataSamples = data.samples;
-  if (localSettings.shuffle) { dataSamples = _.shuffle(dataSamples); }
-
-  // Step 2. Split into samples and labels
+function splitData(data) {
+  // Split into samples and labels
   let finalSamples = [];
   let finalLabels = [];
   const labelColumnCount = 1;
 
-  _.each(dataSamples, (dataArray) => {
+  _.each(data.samples, (dataArray) => {
     const featureCount = dataArray.length - labelColumnCount;
-    finalSamples.push(dataArray.slice(0, featureCount));
-    finalLabels.push(dataArray.slice(featureCount));
+    let features = dataArray.slice(0, featureCount);
+    finalSamples.push(features);
+    let labels = dataArray.slice(featureCount);
+    
+    if (Array.isArray(labels)) {
+      finalLabels.push(labels.length == 1 ? labels[0] : labels);
+    }
+    else {
+      finalLabels.push(labels);
+    }
   });
 
   data.labels = finalLabels;
   data.samples = finalSamples;
 
   return data;
-}
-
-/**
- * Genera nuevos datos a partir de una colección de datos originales
- * @param data Datos leídos de archivos
- * @param settings Settings generales para carga de archivo
- * @returns Colecciones de datos y etiquetas expandida
- */
-function dataAugmentation(readData, settings) {
-
-  // Here we generate 5 synthetic data points to bolster our training data with an balance an imbalanced data set.
-  const countToGenerate = settings.dataAugmentationTotal - readData.samples.length;
-
-  if (countToGenerate <= 0) return readData;
-
-  // Pass in your real data vectors.
-  const smote = new SMOTE(readData.samples);
-
-  let newVectors;
-  const labelColumnCount = 1;
-
-  tf.tidy(() => {
-    newVectors = smote.generate(countToGenerate).
-      map(vector => {
-        let maxIx = vector.length - labelColumnCount;
-        let features = vector.slice(0, maxIx).map(o => Math.floor(o));
-        let resultLabel = Math.floor(tf.tensor(vector.slice(maxIx)).dataSync());
-
-        /* Tipo movimiento */
-        features.push(resultLabel);
-
-        /* Actualiza maximo encontrado */
-        for (let i = 0; i < features.length - 1; i++) {
-          if (readData.dataMax[i] < features[i]) {
-            readData.dataMax[i] = features[i];
-          }
-        }
-
-        return features;
-      });
-  });
-
-  readData.samples = readData.samples.concat(newVectors);
-
-  return readData;
 }
 
 /* ****************************************************** */
@@ -354,5 +326,6 @@ function dataAugmentation(readData, settings) {
 module.exports = {
   MOVE_TYPE,
   loadJSON,
-  splitData
+  splitData,
+  dataPreProcessing
 };

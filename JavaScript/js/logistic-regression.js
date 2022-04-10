@@ -141,21 +141,23 @@ class LogisticRegression {
         const labelTensor = this.predict(testFeatures);
         const predictions = labelTensor.arraySync();
         
-        const incorrect = testLabelsTensor.notEqual(labelTensor).sum().arraySync();
+        // const incorrect = testLabelsTensor.notEqual(labelTensor).sum().arraySync();
         const predictionCount = predictions.length;
-        console.log("incorrect", incorrect, "predictionCount", predictionCount);
-
+        let correctCount = 0;
         if (this.options.verbose) {
             console.log("Comparacion resultados");
             let comparison = testLabels.map((currentValue, index) => {
                 let singleValue = Array.isArray(currentValue) && currentValue.length == 1 ? currentValue[0] : currentValue;
                 let predictionValue = predictions[index];
-                return [singleValue, predictionValue, currentValue == predictionValue];
+                const isCorrect = currentValue == predictionValue;
+                correctCount += isCorrect ? 1 : 0;
+                return [singleValue, predictionValue, isCorrect];
             });
-            console.table(comparison);
+            console.log(comparison);
         }
 
-        return { precision: (predictionCount - incorrect) / predictionCount };
+        console.log("correct", correctCount, "/", predictionCount);
+        return { precision: correctCount / predictionCount };
     }
 
     normalize(samplesToNormalize) {
@@ -210,8 +212,8 @@ class LogisticRegression {
     }
 
     summary() {
-        console.log("costHistory", this.costHistory);
-        console.log("weights", this.weights.arraySync());
+        // console.log("costHistory", this.costHistory);
+        // console.log("weights", this.weights.arraySync());
         console.log("mean", this.mean.dataSync());
         console.log("variance", this.variance.dataSync());
     }
