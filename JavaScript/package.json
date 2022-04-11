@@ -12,6 +12,7 @@
     "@tensorflow/tfjs-node": "^3.13.0",
     "arrayify-merge.s": "^0.1.2",
     "axios": "^0.26.0",
+    "bayes": "^1.0.0",
     "brain.js": "^2.0.0-beta.5",
     "danfojs-node": "^1.0.4",
     "decision-tree": "^0.3.7",

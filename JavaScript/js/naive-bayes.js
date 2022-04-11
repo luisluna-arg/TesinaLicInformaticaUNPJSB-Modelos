@@ -162,8 +162,8 @@ class NaiveBayes {
                     .forEach(function (measurement) {
 
                         // let flooredFeature = measurement;
-                        let flooredFeature = Math.floor(measurement);
-                        // let flooredFeature = Math.round(measurement, 2);
+                        // let flooredFeature = Math.floor(measurement);
+                        let flooredFeature = Math.round(measurement, 2);
                         let frequencyInSamples = frequencyTable[flooredFeature];
 
                         let featureProbability = self.featureProbability(flooredFeature, label);

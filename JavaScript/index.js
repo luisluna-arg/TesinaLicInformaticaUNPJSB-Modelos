@@ -87,7 +87,7 @@ const loadModel = (modelType) => {
 
 
 /* Definir modelo a usar */
-const ModelType = methods.DECISION_TREE;
+const ModelType = methods.NAIVE_BAYES;
 const ModelClass = loadModel(ModelType)
 
 
@@ -118,22 +118,22 @@ switch (ModelType) {
         Object.assign(loadingSettings, {
             truncate: false,
             decimals: 4,
-            normalization: false,
+            normalization: true,
             fourier: false,
-            deviationMatrix: false
+            deviationMatrix: true
         });
         break;
     }
     case methods.DECISION_TREE: {
         Object.assign(loadingSettings, {
-            selectFeatures: true,
-            filter: true,
+            selectFeatures: false,
+            filter: false,
             truncate: true,
-            decimals: 1,
+            decimals: 4,
             normalization: true,
-            fourier: false,
+            fourier: true,
             deviationMatrix: true,
-            dataAugmentation: true,
+            dataAugmentation: false,
             dataAugmentationTotal: 5000 /* Muestras totales por grupo de clase aumentado */
             });
         break;
@@ -285,6 +285,7 @@ for (let i = 0; i < trainingExerciseCount; i++) {
             // LogisticRegression
             const regression = new ModelClass(trainingData, trainingLabels, regressionSettingsCoreModel);
             regression.train();
+            console.log("train");
             let result = regression.test(testData, testLabels);
             testings.push(result);
             console.log("Precision [" + (i + 1) + "]", result);
@@ -368,9 +369,6 @@ for (let i = 0; i < trainingExerciseCount; i++) {
             let result = net.test(testData, testLabels);
             testings.push(result);
             // console.log("Precision [" + (i + 1) + "]", result);
-            break;
-
-            
             break;
         }
         
