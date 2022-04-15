@@ -4,9 +4,7 @@ const _ = require('lodash');
 
 /* ******************************************************** */
 
-const labelCount = 4;
-
-function  buildLabelArray(item) {
+function buildLabelArray(item) {
     let result = new Array(4);
     result.fill(0);
     result[item - 1] = 1;
@@ -14,11 +12,7 @@ function  buildLabelArray(item) {
 }
 
 function labelMapper(item) {
-    if (!Array.isArray(item)) return buildLabelArray(item);
-    
-    if (item.length === 1)  return buildLabelArray(item[0])
-    
-    return item;
+    return !Array.isArray(item) ? buildLabelArray(item) : item;
 }
 
 const addLayers = (model, layers) => {
@@ -47,7 +41,7 @@ class LogisticRegression {
         /* Set default option settings */
         this.options = Object.assign({
             learningRate: 0.1,
-            iterations: 100,
+            epochs: 100,
             batchSize: 1000,
             decisionBoundary: 0.5,
             subject: "TestSubject_2",
@@ -60,7 +54,7 @@ class LogisticRegression {
 
         this.samples = tf.tensor(baseSamples);
         this.labels = tf.tensor(baseLabels.map(labelMapper));
-        
+
         const { mean, variance } = tf.moments(this.samples, 0);
         this.mean = mean;
         this.variance = variance;
@@ -74,8 +68,11 @@ class LogisticRegression {
 
         this.model = tf.sequential();
 
+        const units = this.labels.shape != null && this.labels.shape.length > 1 ? this.labels.shape[1] : 1;
+        const inputShape = [this.samples.shape[1]]
+
         addLayers(this.model, [
-            tf.layers.dense({ inputShape: [this.samples.shape[1]], units: this.labels.shape[1], activation: "relu" })
+            tf.layers.dense({ inputShape, units, activation: this.options.useReLu ? 'relu' : 'softmax' })
         ]);
 
     }
@@ -84,9 +81,9 @@ class LogisticRegression {
         this.model.compile(this.compileSettings);
 
         return await this.model.fit(this.samples, this.labels, {
-            batchSize: 250,
-            epochs: 500,
-            verbose: false,
+            batchSize: this.options.batchSize, // 250
+            epochs: this.options.epochs, // 500
+            verbose: this.options.verbose,
             callbacks: { onTrainEnd: trainEndCallback }
         });
     }
@@ -97,7 +94,8 @@ class LogisticRegression {
 
         tf.tidy(() => {
             let testDataTensor = tf.tensor(testData);
-            let testLabelTensor = tf.tensor(testLabels);
+            const mappedTestLabels = testLabels.map(labelMapper);
+            let testLabelTensor = tf.tensor(mappedTestLabels);
 
             let result = this.model.evaluate(testDataTensor, testLabelTensor, {
                 batchSize: this.options.batchSize
@@ -120,14 +118,12 @@ class LogisticRegression {
                 console.log("Capas y pesos");
                 for (let i = 0; i < this.model.layers.length; i++) {
                     let layer = this.model.layers[i];
-                    console.log("layer", layer.name);
                     let weights = layer.getWeights();
                     for (let j = 0; j < weights.length; j++) {
                         let weight = weights[j];
                         console.log("Dimension: [" + weight.shape[0] + ", " + weight.shape[1] + "]");
                     }
                 }
-                console.log("");
             }
 
             let predictionsValues = [];
@@ -135,14 +131,10 @@ class LogisticRegression {
 
             for (let i = 0; i < testData.length; i++) {
                 const dataItem = testData[i];
-                const expectedLabel = testLabels[i];
-                const prediction = this.predict(dataItem);
+                const expectedLabel = mappedTestLabels[i];
+                const prediction = buildLabelArray(this.predict(dataItem));
 
                 const predictionResult = [prediction, expectedLabel, _.isEqual(prediction, expectedLabel)];
-
-                if (this.options.verbose) {
-                    // console.log("expectedLabel", expectedLabel, "prediction", prediction);
-                }
 
                 predictions.push(predictionResult);
 
@@ -160,8 +152,8 @@ class LogisticRegression {
             let meanVal = formatFloatArray(mean);
 
             finalResult = {
-                mean: meanVal, 
-                variance: varianceVal, 
+                mean: meanVal,
+                variance: varianceVal,
                 precision,
                 devStd
             };

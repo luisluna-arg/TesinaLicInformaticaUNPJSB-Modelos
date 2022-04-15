@@ -24,7 +24,7 @@ class Sample {
     constructor(sampleValues, featureNames, label) {
         for (let i = 0; i < sampleValues.length; i++) {
             const featureName = featureNames[i];
-            this[featureName] = sampleValues[i];
+            this[featureName] = sampleValues[i].toString();
         }
 
         if (label) {
@@ -103,7 +103,7 @@ class DirectionDecisionTree {
             }
 
             this.decisionTree = new DecisionTree(CLASS_NAME, this.FEATURE_NAMES);
-            this.trainingLabels = trainingLabels;
+            this.trainingLabels = trainingLabels.map(o => o.toString());
             this.trainingSamples = this.formatSamples(trainingSamples, this.trainingLabels);
         }
     }
@@ -152,7 +152,7 @@ class DirectionDecisionTree {
         const result = { 
             testLength: testSamples.length,
             correct,
-            precision: correct / testSamples.length
+            precision: correct / testSamples.length * 100
         };
 
         return result;

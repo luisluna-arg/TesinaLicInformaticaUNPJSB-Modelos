@@ -163,8 +163,9 @@ function applyFFT(data, settings) {
     return result;
 }
 
-function deviationMatrix(data, settings) {
+function deviationMatrix(data, featureNames, settings) {
     let devMatrix = [];
+    let newFeatureNames = [];
 
     tf.tidy(() => {
         const correlateAll = true; // Correlacionar todas las columnas
@@ -194,9 +195,16 @@ function deviationMatrix(data, settings) {
 
             devMatrix.push(resampled);
         }
+
+        const featureCount = data[0].length - 1;
+        for (let i = 0; i < featureCount; i++) {
+            const featureName = featureNames[i];
+            newFeatureNames.push(`${featureName}_m`);
+            newFeatureNames.push(`${featureName}_std`);
+        }
     });
 
-    return devMatrix;
+    return { devMatrix, newFeatureNames };
 }
 
 function filterDeviation(data) {
@@ -261,11 +269,7 @@ function filterNone(result) {
 
 function filterCorrelationMatrix(data, featureNames) {
     const features = data.map(o => o.slice(0, o.length - 1));
-    // console.log("features", data[0]);
-    // console.log("features", features[0]);
-   
     const correlationResult = correlation.calculateCorrelation(features);
-    // console.log("correlationResult", correlationResult);
 
     let newResult = [];
     let newFeatureNames = [];
@@ -273,16 +277,12 @@ function filterCorrelationMatrix(data, featureNames) {
         const avgMap = correlationResult.map(item => {
             return (_.sum(item) - 1) / (item.length - 1);
         });
-        // console.log("avgMap", avgMap);
 
         const { mean } = tf.moments(avgMap);
-        // console.log("mean", mean.arraySync());
         let indexToKeep = [];
         avgMap.forEach((currentValue, featureIndex) => {
             if (currentValue >= mean.arraySync()) indexToKeep.push(featureIndex);
         });
-
-        // console.log("indexToKeep", indexToKeep);
 
         newResult = data.map(sample => {
             let resampled = indexToKeep.map(index => sample[index]);
@@ -292,10 +292,6 @@ function filterCorrelationMatrix(data, featureNames) {
 
         newFeatureNames = indexToKeep.map(index => featureNames[index]);
     });
-
-    // console.log("newResult", newResult[0]);
-    // console.log("newFeatureNames", newFeatureNames[0]);
-
 
     return { updatedSamples: newResult, updatedFeatureNames: newFeatureNames };
 }
@@ -354,7 +350,9 @@ function preProcess(data, dataFeatureNames, settings) {
     }
 
     if (localSettings.deviationMatrix) {
-        result = deviationMatrix(result, localSettings);
+        let { devMatrix, newFeatureNames } = deviationMatrix(result, dataFeatureNames, localSettings);
+        result = devMatrix;
+        dataFeatureNames = newFeatureNames;
     }
 
     if (localSettings.truncate) {

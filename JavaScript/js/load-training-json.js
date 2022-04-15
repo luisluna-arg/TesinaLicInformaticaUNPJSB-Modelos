@@ -9,21 +9,12 @@ const { preProcess } = require('./data-preprocessing');
 const defaultDecimals = 5;
 
 function getArrayShape(array) {
+  if (isNullOrUndef(array)) throw 'Array is not valid';
   return [array.length, array.length > 0 ? Array.isArray(array[0]) ? array[0].length : 1 : 1];
 }
 
 function isNullOrUndef(value) {
   return typeof value == 'undefined' || value == null;
-}
-
-function featureNamesForDevMatrix(featureNames) {
-  let newNames = [];
-  for (let a = 0; a < featureNames.length; a++) {
-    const featureName = featureNames[a];
-    newNames.push(featureName + '_m');
-    newNames.push(featureName + '_std');
-  }
-  return newNames;
 }
 
 /* ****************************************************** */
@@ -40,81 +31,107 @@ const MOVE_TYPE = {
 
 class ReadData {
 
+  #samples = null;
+  #labels = null;
+  #dataMax = null;
+  #featureNames = null;
+
+  /* Features por defecto */
+  #DEFAULT_FEATURE_NAMES = [
+    "delta",
+    "theta",
+    "lowAlpha",
+    "highAlpha",
+    "lowBeta",
+    "highBeta",
+    "lowGamma",
+    "highGamma"
+  ];
+
   constructor(samples, maxes, labels = null) {
-    this.samples = samples;
-    this.labels = labels;
-    this.dataMax = maxes;
+    this.#samples = samples;
+    this.#labels = labels;
+    this.#dataMax = maxes;
+    this.#featureNames = this.#DEFAULT_FEATURE_NAMES;
+  }
 
-    const _FEATURE_NAMES = [
-      "delta",
-      "theta",
-      "lowAlpha",
-      "highAlpha",
-      "lowBeta",
-      "highBeta",
-      "lowGamma",
-      "highGamma"
-    ];
+  setSamples(samples, featureNames) {
+    this.#samples = samples;
+    this.#featureNames = !isNullOrUndef(featureNames) ? featureNames : this.#DEFAULT_FEATURE_NAMES;
+    this.#calculateDataMaxes();
+  }
 
-    this.FEATURE_NAMES = _FEATURE_NAMES;
+  getSamples() {
+    return this.#samples;
+  }
+
+  getFeatureNames() {
+    return this.#featureNames;
+  }
+
+  setLabels(labels) {
+    this.#labels = labels;
+  }
+
+  getLabels() {
+    return this.#labels;
+  }
+
+  getDataMaxes() {
+    return this.#dataMax;
   }
 
   concat(data2) {
     if (isNullOrUndef(data2)) return;
 
     let data1 = this;
-    data1.samples = data1.samples.concat(data2.samples);
+    data1.setSamples(data1.getSamples().concat(data2.getSamples()));
 
-    if (isNullOrUndef(data1.labels) != isNullOrUndef(data2.labels)) {
+    if (isNullOrUndef(data1.getSamples()) || data1.getSamples().length == 0) {
+      throw 'No hay muestras disponibles para concatenar';
+    }
+
+    if (isNullOrUndef(data1.getLabels()) != isNullOrUndef(data2.getLabels())) {
       throw 'No se puede concatenar, uno de los dataset esta dividido en muestras y etiquetas'
     }
 
-    if (!isNullOrUndef(data1.labels) && !isNullOrUndef(data2.labels)) {
-      data1.labels = data1.labels.concat(data2.labels);
-    }
-
-    if (isNullOrUndef(data1.dataMax) || isNullOrUndef(data2.dataMax)) {
-      this.calculateDataMaxes();
-    }
-    else {
-      for (let i = 0; i < data1.dataMax.length; i++) {
-        if (data1.dataMax[i] < data2.dataMax[i]) {
-          data1.dataMax[i] = data2.dataMax[i];
-        }
-      }
+    if (!isNullOrUndef(data1.getLabels()) && !isNullOrUndef(data2.getLabels())) {
+      data1.setLabels(data1.getLabels().concat(data2.getLabels()));
     }
   }
 
   /**
    * Calcula los valores maximos para la coleccion de muestras de la instancia, por columnas
    */
-  calculateDataMaxes(labelColumnCount = null) {
+  #calculateDataMaxes(labelColumnCount = null) {
+
+    if (isNullOrUndef(this.#samples) || this.#samples.length == 0) return;
 
     let localLabelColCount = labelColumnCount;
 
-    if (localLabelColCount == null && Array.isArray(this.labels) && this.labels.length > 0) {
-      let labelExtraction = this.labels[0];
+    if (localLabelColCount == null && Array.isArray(this.#labels) && this.#labels.length > 0) {
+      let labelExtraction = this.#labels[0];
       localLabelColCount = Array.isArray(labelExtraction) ? labelExtraction.length : 1;
     }
     localLabelColCount = (localLabelColCount != null ? localLabelColCount : 0);
 
-    let featureColumnCount = this.samples[0].length - localLabelColCount;
+    let featureColumnCount = this.#samples[0].length - localLabelColCount;
     let maxes = new Array(featureColumnCount).fill(0);
 
-    for (let i = 0; i < this.samples.length; i++) {
-      const currentSample = this.samples[i];
+    for (let i = 0; i < this.#samples.length; i++) {
+      const currentSample = this.#samples[i];
       for (let j = 0; j < featureColumnCount; j++) {
         if (maxes[j] < currentSample[j]) maxes[j] = currentSample[j];
       }
     }
 
-    this.dataMax = maxes;
+    this.#dataMax = maxes;
   }
 
-  getLabelCount = function(data) {
+  getLabelCount = function (data) {
     const labelGetter = (labelContainer) => Array.isArray(labelContainer) ? labelContainer[labelContainer.length - 1] : labelContainer;
     let labelCount = {};
-    data.forEach(item => { 
+    data.forEach(item => {
       const label = labelGetter(item);
       if (isNullOrUndef(labelCount[label])) labelCount[label] = 0;
       labelCount[label]++;
@@ -126,25 +143,25 @@ class ReadData {
     console.log("DATA SUMMARY");
     console.log("============");
 
-    const samplesShape = getArrayShape(this.samples);
+    const samplesShape = getArrayShape(this.#samples);
     let maxes = {};
-    for (let i = 0; i < this.FEATURE_NAMES.length; i++) {
-      maxes[this.FEATURE_NAMES[i]] = this.dataMax[i];
+    for (let i = 0; i < this.#featureNames.length; i++) {
+      maxes[this.#featureNames[i]] = this.#dataMax[i];
     }
 
-    if (this.labels != null && Array.isArray(this.labels)) {
-      const labelsShape = getArrayShape(this.labels);
-      let labelCount = this.getLabelCount(this.labels);
+    if (this.labels != null && Array.isArray(this.#labels)) {
+      const labelsShape = getArrayShape(this.#labels);
+      let labelCount = this.getLabelCount(this.#labels);
 
       console.log("Shapes Samples|Labels:", samplesShape, labelsShape);
+      console.log("Label count:", labelCount);
       console.log("Feature maxes:", maxes);
-      // console.log("Label count:", labelCount);
     }
     else {
-      let labelCount = this.getLabelCount(this.samples);
+      let labelCount = this.getLabelCount(this.#samples);
       console.log("Shapes Samples:", samplesShape);
+      console.log("Label count:", labelCount);
       console.log("Feature maxes:", maxes);
-      // console.log("Label count:", labelCount);
     }
 
   }
@@ -216,7 +233,6 @@ function loadJSON(fileData, settings) {
   });
 
   let readData = new ReadData(samples, dataMax);
-
   readData = dataPreProcessing(readData, localSettings);
 
   if (localSettings.split) {
@@ -229,24 +245,13 @@ function loadJSON(fileData, settings) {
 function dataPreProcessing(readData, localSettings) {
   const columnCount = 1;
 
-  console.log("dataPreProcessing.readData", readData.samples.length);
-  console.log("dataPreProcessing.readData.samples[0]", readData.samples[0].length);
-  console.log("dataPreProcessing.readData.FEATURE_NAMES", readData.FEATURE_NAMES.length);
-
   // if (localSettings.minTolerance > 0) {
   //   readData = filterData(readData, localSettings);
   // }
-  
-  let { result, featureNames } = preProcess(readData.samples, readData.FEATURE_NAMES, localSettings);
 
-  readData.samples = result;
-  readData.FEATURE_NAMES = featureNames;
+  let { result, featureNames } = preProcess(readData.getSamples(), readData.getFeatureNames(), localSettings);
 
-  if (localSettings.deviationMatrix) {
-    readData.FEATURE_NAMES = featureNamesForDevMatrix(readData.FEATURE_NAMES);
-  }
-
-  readData.calculateDataMaxes(columnCount);
+  readData.setSamples(result, featureNames);
 
   return readData;
 }
@@ -266,12 +271,12 @@ function dataPreProcessing(readData, localSettings) {
 //     *  Si no se supera ese % de tolerancia minimo, se desactivan las labels (array de 0)
 //     *  para descartar la muestra
 //     */
-//   for (let i = 0; i < data.samples.length; i++) {
-//     const sample = data.samples[i];
+//   for (let i = 0; i < data.getSamples().length; i++) {
+//     const sample = data.getSamples()[i];
 //     const features = sample.slice(0, sample.length - columnCount); /* Sample array */
 
 //     for (let featureIndex = 0; featureIndex < features.length; featureIndex++) {
-//       let featureMax = data.dataMax[featureIndex];
+//       let featureMax = data.#dataMax[featureIndex];
 //       let featureValue = features[featureIndex];
 //       if (featureMax > 0 && featureValue / featureMax > localSettings.minTolerance) {
 //         finalSamples.push(sample);
@@ -280,7 +285,7 @@ function dataPreProcessing(readData, localSettings) {
 //     }
 //   }
 
-//   data.samples = finalSamples;
+//   data.setSamples(finalSamples);
 
 //   return data;
 
@@ -299,12 +304,12 @@ function splitData(data) {
   let finalLabels = [];
   const labelColumnCount = 1;
 
-  _.each(data.samples, (dataArray) => {
+  _.each(data.getSamples(), (dataArray) => {
     const featureCount = dataArray.length - labelColumnCount;
     let features = dataArray.slice(0, featureCount);
     finalSamples.push(features);
     let labels = dataArray.slice(featureCount);
-    
+
     if (Array.isArray(labels)) {
       finalLabels.push(labels.length == 1 ? labels[0] : labels);
     }
@@ -313,8 +318,8 @@ function splitData(data) {
     }
   });
 
-  data.labels = finalLabels;
-  data.samples = finalSamples;
+  data.setLabels(finalLabels);
+  data.setSamples(finalSamples);
 
   return data;
 }

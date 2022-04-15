@@ -12,7 +12,7 @@ const _ = require('lodash');
 
 let enumValue = 0;
 const methods = {
-    TF_LAYERMODEL: enumValue++,
+    REGRESSION_TF: enumValue++,
     NAIVE_BAYES: enumValue++,
     DECISION_TREE: enumValue++,
     /* ************************* */
@@ -20,7 +20,7 @@ const methods = {
     CONV_NET_LSTM: enumValue++,
     NET_LSTM: enumValue++,
     /* ************************* */
-    TF_COREAPI: enumValue++, 
+    REGRESSION: enumValue++, 
 }
 
 
@@ -62,12 +62,12 @@ const loadModel = (modelType) => {
             fileName = FILE_BASE_PATH + 'neuronalNetwork';
             break;
         }
-        case methods.TF_COREAPI: {
+        case methods.REGRESSION: {
             modelName = 'TF_COREAPI';
             fileName = FILE_BASE_PATH + 'logistic-regression';
             break;
         }
-        case methods.TF_LAYERMODEL: {
+        case methods.REGRESSION_TF: {
             modelName = 'TF_LAYERMODEL';
             fileName = FILE_BASE_PATH + 'logistic-regression-model';
             break;
@@ -87,7 +87,7 @@ const loadModel = (modelType) => {
 
 
 /* Definir modelo a usar */
-const ModelType = methods.NAIVE_BAYES;
+const ModelType = methods.REGRESSION_TF;
 const ModelClass = loadModel(ModelType)
 
 
@@ -133,20 +133,26 @@ switch (ModelType) {
             normalization: true,
             fourier: true,
             deviationMatrix: true,
-            dataAugmentation: false,
-            dataAugmentationTotal: 5000 /* Muestras totales por grupo de clase aumentado */
             });
         break;
     }
-    case methods.TF_COREAPI: {
+    case methods.REGRESSION: {
+        Object.assign(loadingSettings, {
+            truncate: true,
+            decimals: 4,
+            normalization: true,
+            fourier: false,
+            deviationMatrix: true,
+            });
+        break;
+    }
+    case methods.REGRESSION_TF: {
         Object.assign(loadingSettings, {
             truncate: true,
             decimals: 4,
             normalization: true,
             fourier: true,
             deviationMatrix: true,
-            dataAugmentation: true,
-            dataAugmentationTotal: 50000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
             });
         break;
     }
@@ -180,17 +186,6 @@ loadedData.concat(loadData(MOVE_TYPE.UP));
 loadedData.concat(loadData(MOVE_TYPE.LEFT));
 loadedData.concat(loadData(MOVE_TYPE.RIGHT));
 
-// loadedData = dataAugmentation(loadJSON([{ file: fileBasePath + '/ABAJO.json', moveType: MOVE_TYPE.DOWN }], defaultSettings), defaultSettings);
-// loadedData.concat(dataAugmentation(loadJSON([{ file: fileBasePath + '/ARRIBA.json', moveType: MOVE_TYPE.UP }], defaultSettings), defaultSettings));
-// loadedData.concat(dataAugmentation(loadJSON([{ file: fileBasePath + '/IZQUIERDA.json', moveType: MOVE_TYPE.LEFT }], defaultSettings), defaultSettings));
-// loadedData.concat(dataAugmentation(loadJSON([{ file: fileBasePath + '/DERECHA.json', moveType: MOVE_TYPE.RIGHT }], defaultSettings), defaultSettings));
-console.log("");
-loadedData.calculateDataMaxes();
-loadedData.summary();
-
-// printHeader("Samples")
-// console.log(loadedData.samples);
-
 /* Una vez cargados, aplicar preprocesamientos, excepto data augmentation */
 printHeader("Preprocesamiento de datos");
 loadedData = dataPreProcessing(loadedData, loadingSettings);
@@ -198,56 +193,55 @@ loadedData = dataPreProcessing(loadedData, loadingSettings);
 console.log("");
 console.log("Loading Settings", loadingSettings);
 
-let start = loadedData.samples.length - 2005;
-start = start < 0 ? 0 : start;
+console.log("");
+loadedData.summary();
 
 /* ************************************************************** */
 
 printHeader("Testings");
 
-const regressionSettingsCoreModel = {
-    learningRate: 0.5,
-    iterations: 2000,
-    batchSize: 20000,
-    useReLu: false,
-    shuffle: !loadingSettings.shuffle,
-    verbose: true
-};
+const modelSettings = {
+    regression: {
+        learningRate: 0.5,
+        iterations: 2000,
+        batchSize: 20000,
+        useReLu: false,
+        shuffle: !loadingSettings.shuffle,
+        verbose: true
+    },
+    regressionTF: {
+        learningRate: 0.000005, //0.5, 
+        epochs: 1500,
+        batchSize: 400,//Math.floor(loadedData.getSamples().length * batchSize),
+        useReLu: true,
+        shuffle: !loadingSettings.shuffle,
+        verbose: false
+    },
+    naiveBayes: {
+        MoveTypeEnum: MOVE_TYPE,
+        verbose: false,
+        useReLu: false
+    },
+    decisionTree: {
+        MoveTypeEnum: MOVE_TYPE,
+        verbose: false
+    },
+    neuro: {
+        MoveTypeEnum: MOVE_TYPE,
+        verbose: true,
+        epochs: 5,
+        stepsPerEpoch: 20,
+        validationSteps: 100,
+        learningRate: 0.00000005
+    },
+    NetLSTM: {
+        epochs: 10,
+        batchSize: 2,
+        verbose: false,
+    }
+}
 
-const regressionSettingsLayerModel = {
-    learningRate: 0.000005, //0.5, 
-    iterations: 5000,
-    batchSize: 500,//Math.floor(loadedData.samples.length * batchSize),
-    useReLu: false,
-    shuffle: !loadingSettings.shuffle,
-    verbose: true
-};
 
-const naiveBayesSettings = {
-    MoveTypeEnum: MOVE_TYPE,
-    verbose: false,
-    useReLu: false
-};
-
-const decisionTreeSettings = {
-    MoveTypeEnum: MOVE_TYPE,
-    verbose: false
-};
-
-const neuroSettings = {
-    MoveTypeEnum: MOVE_TYPE,
-    verbose: true,
-    epochs: 5,
-    stepsPerEpoch: 20,
-    validationSteps: 100,
-    learningRate: 0.00000005
-};
-
-const NetLSTMSettings = {
-    epochs: 10,
-    batchSize: 2,
-    verbose: false,
-};
 
 const trainingExerciseCount = 1;
 
@@ -255,7 +249,12 @@ let promises = [];
 let testings = [];
 
 for (let i = 0; i < trainingExerciseCount; i++) {
-    const { samples, labels } = splitData(loadedData);
+    splitData(loadedData);
+
+    const samples = loadedData.getSamples();
+    const labels = loadedData.getLabels();
+
+    
 
     /* Data de entrenamiento */
     const trainingLength = Math.floor(samples.length * 0.7);
@@ -267,9 +266,9 @@ for (let i = 0; i < trainingExerciseCount; i++) {
     const testLabels = labels.slice(trainingLength);
 
     switch (ModelType) {
-        case methods.TF_LAYERMODEL: {
+        case methods.REGRESSION_TF: {
             // LogisticRegression
-            const regression = new ModelClass(trainingData, trainingLabels, regressionSettingsLayerModel);
+            const regression = new ModelClass(trainingData, trainingLabels, modelSettings.regressionTF);
 
             promises.push(
                 regression.train(function (logs) {
@@ -281,9 +280,9 @@ for (let i = 0; i < trainingExerciseCount; i++) {
 
             break;
         }
-        case methods.TF_COREAPI: {
+        case methods.REGRESSION: {
             // LogisticRegression
-            const regression = new ModelClass(trainingData, trainingLabels, regressionSettingsCoreModel);
+            const regression = new ModelClass(trainingData, trainingLabels, modelSettings.regression);
             regression.train();
             console.log("train");
             let result = regression.test(testData, testLabels);
@@ -295,7 +294,7 @@ for (let i = 0; i < trainingExerciseCount; i++) {
         }
         case methods.NAIVE_BAYES: {
             // NaiveBayes
-            const naiveBayes = new ModelClass(trainingData, trainingLabels, naiveBayesSettings);
+            const naiveBayes = new ModelClass(trainingData, trainingLabels, modelSettings.naiveBayes);
             naiveBayes.train();
             let result = naiveBayes.test(testData, testLabels);
             testings.push(result);
@@ -319,7 +318,7 @@ for (let i = 0; i < trainingExerciseCount; i++) {
             console.log("Test", testData[0]);
             loadedData.summary();
 
-            const decisionTree = new ModelClass(trainingData, trainingLabels, loadedData.FEATURE_NAMES, decisionTreeSettings);
+            const decisionTree = new ModelClass(trainingData, trainingLabels, loadedData.getFeatureNames(), modelSettings.decisionTree);
             decisionTree.train();
             let result = decisionTree.test(testData, testLabels);
             testings.push(result);
@@ -328,7 +327,7 @@ for (let i = 0; i < trainingExerciseCount; i++) {
             // let localJson = decisionTree.toJSON();
 
             // printSubHeader("Crear Arbol mediante JSON");
-            // const decisionTreeJSON = new ModelClass(localJson, loadedData.FEATURE_NAMES);
+            // const decisionTreeJSON = new ModelClass(localJson, loadedData.getFeatureNames());
             // decisionTreeJSON.train();
             // let JSONResult = decisionTreeJSON.test(testData, testLabels);
             // console.log("Precision JSON [" + (i + 1) + "]", parseFloat(JSONResult.precision.toFixed(8)));
@@ -340,7 +339,7 @@ for (let i = 0; i < trainingExerciseCount; i++) {
         case methods.NEURO: {
             printSubHeader("Red neuronal");
             // NeuronalNetwork
-            const neuro = new ModelClass(trainingData, trainingLabels, neuroSettings);
+            const neuro = new ModelClass(trainingData, trainingLabels, modelSettings.neuro);
             promises.push(
                 neuro.train(function (logs) {
                     let result = neuro.test(testData, testLabels);
@@ -353,7 +352,7 @@ for (let i = 0; i < trainingExerciseCount; i++) {
         case methods.CONV_NET_LSTM: {
             printSubHeader("Red CONV_NET_LSTM");
             // ConvNetLSTM
-            const net = new ModelClass(trainingData, trainingLabels, neuroSettings);
+            const net = new ModelClass(trainingData, trainingLabels, modelSettings.neuro);
             // net.testModel(testData, testLabels);
             net.train();
             let result = net.test(testData, testLabels);
@@ -364,7 +363,7 @@ for (let i = 0; i < trainingExerciseCount; i++) {
         case methods.NET_LSTM: {
             printSubHeader("Red NET_LSTM");
             // NET_LSTM
-            const net = new ModelClass(trainingData, trainingLabels, NetLSTMSettings);
+            const net = new ModelClass(trainingData, trainingLabels, modelSettings.NetLSTM);
             net.train();
             let result = net.test(testData, testLabels);
             testings.push(result);
@@ -387,7 +386,7 @@ function showResults(currentResults) {
     );
 }
 
-let promiseModels = [methods.TF_LAYERMODEL, methods.NEURO, methods.TF_LAYERMODEL];
+let promiseModels = [methods.REGRESSION_TF, methods.NEURO, methods.REGRESSION_TF];
 if (promiseModels.filter(o => o == ModelType)) {
     Promise.all(promises).then(results => { showResults(testings); });
 } else {

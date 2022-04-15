@@ -157,7 +157,7 @@ class LogisticRegression {
         }
 
         console.log("correct", correctCount, "/", predictionCount);
-        return { precision: correctCount / predictionCount };
+        return { precision: correctCount / predictionCount * 100 };
     }
 
     normalize(samplesToNormalize) {
