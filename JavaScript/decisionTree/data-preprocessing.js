@@ -2,32 +2,13 @@ let tf = require('@tensorflow/tfjs-node');
 let dfd = require("danfojs-node");
 const _ = require('lodash');
 const SMOTE = require('smote');
-const correlation = require('./correlationMatrix');
-
-
-
-/* ****************************************************** */
-/* ****************************************************** */
-/* ****************************************************** */
-
-let defaultDecimals = 5;
-
-function isNullOrUndef(value) { return typeof value == 'undefined' || value == null; }
-
-function trunc(value, decimals) {
-    if (isNullOrUndef(decimals)) {
-        decimals = defaultDecimals;
-    }
-
-    let fixed = value.toFixed(decimals);
-    let fixedFloat = parseFloat(fixed);
-
-    return fixedFloat;
-}
+const correlation = require('./correlation-matrix');
+const MiscUtils = require('./misc-utils');
 
 /* ****************************************************** */
 /* ****************************************************** */
 /* ****************************************************** */
+const DefaultDecimals = 5;
 
 /**
  * 
@@ -36,7 +17,7 @@ function trunc(value, decimals) {
  * @returns Coleccion de datos redondeados a N decimales
  */
 function truncateNumerics(dataCollection, decimals) {
-    return dataCollection.map(itemCollection => itemCollection.map(item => trunc(item, decimals)));
+    return dataCollection.map(itemCollection => itemCollection.map(item => MiscUtils.trunc(item, decimals)));
 }
 
 
@@ -92,12 +73,6 @@ function dataAugmentation(samples, settings) {
         // console.log("label", label);
         let labelGroup = byLabel[label].map(sample => sample.slice(0, sample.length - 1));
         const countToGenerate = settings.dataAugmentationTotal - labelGroup.length;
-        // console.log("byLabel[label]", byLabel[label][0]);
-        // console.log("label", label, typeof (label));
-        // console.log("settings.dataAugmentationTotal", settings.dataAugmentationTotal);
-        // console.log("labelGroup.length", labelGroup.length);
-        // console.log("labelGroup[0]", labelGroup[0]);
-        // console.log("countToGenerate", countToGenerate);
 
         if (countToGenerate <= 0) return labelGroup;
 
@@ -105,7 +80,6 @@ function dataAugmentation(samples, settings) {
         const smote = new SMOTE(labelGroup);
 
         let newVectors;
-        const labelColumnCount = 1;
 
         tf.tidy(() => {
             newVectors = smote.generate(countToGenerate).
@@ -226,7 +200,7 @@ function filterDeviation(data) {
 
             featureArray.forEach((o, index) => {
                 let devDiff = Math.abs(o - stdDeviationVal);
-                let deviations = trunc(devDiff / stdDeviationVal, 2);
+                let deviations = MiscUtils.trunc(devDiff / stdDeviationVal, 2);
                 result.push([deviations, devDiff, index]);
                 if (deviations > 2) indexesToRemove.push(index);
             });
@@ -317,7 +291,7 @@ function preProcess(data, dataFeatureNames, settings) {
         fourier: true,
         deviationMatrix: true,
         truncate: true,
-        decimals: defaultDecimals
+        decimals: DefaultDecimals
     }, settings);
 
     // console.log("localSettings", localSettings);

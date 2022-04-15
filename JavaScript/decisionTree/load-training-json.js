@@ -1,25 +1,13 @@
 const fs = require('fs');
 const _ = require('lodash');
 const { preProcess } = require('./data-preprocessing');
+const MiscUtils = require('./misc-utils');
 
 /* ****************************************************** */
 /* ****************************************************** */
 /* ****************************************************** */
 
 const defaultDecimals = 5;
-
-function getArrayShape(array) {
-  if (isNullOrUndef(array)) throw 'Array is not valid';
-  return [array.length, array.length > 0 ? Array.isArray(array[0]) ? array[0].length : 1 : 1];
-}
-
-function isNullOrUndef(value) {
-  return typeof value == 'undefined' || value == null;
-}
-
-/* ****************************************************** */
-/* ****************************************************** */
-/* ****************************************************** */
 
 const MOVE_TYPE = {
   NONE: 0,
@@ -57,7 +45,7 @@ class ReadData {
 
   setSamples(samples, featureNames) {
     this.#samples = samples;
-    this.#featureNames = !isNullOrUndef(featureNames) ? featureNames : this.#DEFAULT_FEATURE_NAMES;
+    this.#featureNames = !MiscUtils.isNullOrUndef(featureNames) ? featureNames : this.#DEFAULT_FEATURE_NAMES;
     this.#calculateDataMaxes();
   }
 
@@ -82,20 +70,20 @@ class ReadData {
   }
 
   concat(data2) {
-    if (isNullOrUndef(data2)) return;
+    if (MiscUtils.isNullOrUndef(data2)) return;
 
     let data1 = this;
     data1.setSamples(data1.getSamples().concat(data2.getSamples()));
 
-    if (isNullOrUndef(data1.getSamples()) || data1.getSamples().length == 0) {
+    if (MiscUtils.isNullOrUndef(data1.getSamples()) || data1.getSamples().length == 0) {
       throw 'No hay muestras disponibles para concatenar';
     }
 
-    if (isNullOrUndef(data1.getLabels()) != isNullOrUndef(data2.getLabels())) {
+    if (MiscUtils.isNullOrUndef(data1.getLabels()) != MiscUtils.isNullOrUndef(data2.getLabels())) {
       throw 'No se puede concatenar, uno de los dataset esta dividido en muestras y etiquetas'
     }
 
-    if (!isNullOrUndef(data1.getLabels()) && !isNullOrUndef(data2.getLabels())) {
+    if (!MiscUtils.isNullOrUndef(data1.getLabels()) && !MiscUtils.isNullOrUndef(data2.getLabels())) {
       data1.setLabels(data1.getLabels().concat(data2.getLabels()));
     }
   }
@@ -105,11 +93,11 @@ class ReadData {
    */
   #calculateDataMaxes(labelColumnCount = null) {
 
-    if (isNullOrUndef(this.#samples) || this.#samples.length == 0) return;
+    if (MiscUtils.isNullOrUndef(this.#samples) || this.#samples.length == 0) return;
 
-    const sampleColCount = getArrayShape(this.#samples)[1];
+    const sampleColCount = MiscUtils.getArrayShape(this.#samples)[1];
 
-    if (isNullOrUndef(labelColumnCount)) {
+    if (MiscUtils.isNullOrUndef(labelColumnCount)) {
       labelColumnCount = sampleColCount - this.#featureNames.length; 
     }
 
@@ -132,7 +120,7 @@ class ReadData {
     let labelCount = {};
     data.forEach(item => {
       const label = labelGetter(item);
-      if (isNullOrUndef(labelCount[label])) labelCount[label] = 0;
+      if (MiscUtils.isNullOrUndef(labelCount[label])) labelCount[label] = 0;
       labelCount[label]++;
     });
     return labelCount;
