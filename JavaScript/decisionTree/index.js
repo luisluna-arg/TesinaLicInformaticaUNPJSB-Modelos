@@ -13,7 +13,6 @@ for (let i = 0; i < testData.samples.length; i++) {
     const prediction = decisionTree.predict(sample);
     const equals = prediction == testData.labels[i];
     correct += equals ? 1 : 0;
-    // console.log(`Prediction: ${prediction}`, `Expected: ${testLabels[i]}`, equals);
 }
 
 MiscUtils.printHeader("Resultados Test");

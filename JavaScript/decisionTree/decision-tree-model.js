@@ -149,22 +149,6 @@ class DecisionTreeModel {
         }
     }
 
-    constructorOG(...args) {
-        let argIndex = 0;
-        if (args.length == 2) {
-            json = args[argIndex++];
-            this.#featureNames = args[argIndex++];
-
-            this.#decisionTree = new DecisionTree(CLASS_NAME, this.#featureNames);
-            this.#decisionTree.import(json);
-            this.#JSONTrained = true;
-        }
-        else if (args.length == 4) {
-
-        }
-
-    }
-
     /* Metodos publicos */
     /* **************** */
 
