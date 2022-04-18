@@ -87,7 +87,7 @@ const loadModel = (modelType) => {
 
 
 /* Definir modelo a usar */
-const ModelType = methods.REGRESSION_TF;
+const ModelType = methods.NAIVE_BAYES;
 const ModelClass = loadModel(ModelType)
 
 
