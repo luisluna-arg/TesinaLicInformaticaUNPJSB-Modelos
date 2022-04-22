@@ -227,8 +227,7 @@ function dataPreProcessing(readData, localSettings) {
 
   return {
     data: readData,
-    fourierStats: null,
-    normalizationFeatStats: preProcessResult.normalizationFeatStats,
+    stats: preProcessResult.stats,
     trainingSettings: preProcessResult.trainingSettings
   };
 }

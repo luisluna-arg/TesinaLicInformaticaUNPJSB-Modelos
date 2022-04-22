@@ -1,32 +1,16 @@
 const MiscUtils = require('./misc-utils');
 const { MOVE_TYPE, loadJSON, splitData, dataPreProcessing } = require('./load-training-json');
-const { refactorSample } = require('./data-preprocessing');
+const { refactorSample, confusionMatrix } = require('./data-preprocessing');
 const DecisionTree = require('decision-tree');
 
 const CLASS_NAME = "moveType";
-
-const MoveTypeEnum = {
-    NONE: 0,
-    DOWN: 1,
-    UP: 2,
-    LEFT: 3,
-    RIGHT: 4
-}
-
-const MoveTypeTokens = [
-    'NONE',
-    'DOWN',
-    'UP',
-    'LEFT',
-    'RIGHT'
-];
 
 /* SETTINGS */
 /* //////// */
 
 const DataLoadingSettings = {
     preProcess: false,
-    filter: false,
+    filter: true,
     shuffle: true,
     split: false,
     truncate: true,
@@ -35,8 +19,8 @@ const DataLoadingSettings = {
     fourier: true,
     deviationMatrix: true,
     selectFeatures: false,
-    dataAugmentation: true,
-    dataAugmentationTotal: 10000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    dataAugmentation: false,
+    dataAugmentationTotal: 5000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
     minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
 };
 
@@ -111,9 +95,7 @@ function loadData(fileBasePath) {
             labels: testLabels
         },
         preProcess: {
-            normalizationFeatStats: preProcessResult.normalizationFeatStats,
-            deviationMatrixStats: preProcessResult.deviationMatrixStats,
-            fourierStats: preProcessResult.fourierStats,
+            stats: preProcessResult.stats,
             trainingSettings: preProcessResult.trainingSettings
         }
     };
@@ -167,11 +149,14 @@ class DecisionTreeModel {
         return this.#decisionTree.predict(new Sample(localSample, this.#featureNames));
     }
 
-    predict(predictionSample){
-        let localSample = predictionSample;
+    predict(predictionSample, print){
+        let resampled = predictionSample;
         /* Toda muestra ajena al dataset original debe replantearse */
-        localSample = refactorSample(localSample, this.#preProcess);
-        return this.#decisionTree.predict(new Sample(localSample, this.#featureNames));
+        resampled = refactorSample(resampled, this.#preProcess);
+
+        if (print) console.log("resampled", resampled);
+
+        return this.#decisionTree.predict(new Sample(resampled, this.#featureNames));
     }
 
     getFeatureNames() {
@@ -300,5 +285,6 @@ class DecisionTreeModel {
 }
 
 module.exports = {
-    DecisionTreeModel
+    DecisionTreeModel,
+    confusionMatrix
 }
