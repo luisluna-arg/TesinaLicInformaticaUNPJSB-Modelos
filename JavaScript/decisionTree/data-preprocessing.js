@@ -71,7 +71,7 @@ function dataSetNormalization(data, settings) {
                     std: scaler.$max.arraySync() // scaler.$std.arraySync()
                 }
 
-                console.log("transposedNormalized[" + ix + "]", transposedNormalized[ix][0], "|" + !isNaN(transposedNormalized[ix][0]) + "|");
+                // console.log("transposedNormalized[" + ix + "]", transposedNormalized[ix][0], "|" + !isNaN(transposedNormalized[ix][0]) + "|");
                 // console.log("tansposedNormalized[" + ix + "]", tansposedNormalized[ix]);
                 // console.log("featureStatistics[ix]", featureStatistics[ix]);
             }
@@ -173,22 +173,22 @@ function applyFFT(data, settings) {
             //     "partialResult[colIx]", partialResult[colIx].length
             //     );
 
-            const decimals = 4;
-            let diff = featureCollection.map((v, i) => {
-                const original = MiscUtils.trunc(v, decimals);
-                const transColl = MiscUtils.trunc(partialResult[colIx][i], decimals);
-                const diff = MiscUtils.trunc(v - partialResult[colIx][i], decimals);
-                const transSingle = MiscUtils.trunc(fixFFT([v], settings)[0], decimals);
-                const transSingleHalf = MiscUtils.trunc(transSingle / 2, decimals);
-                const transCollDiff = MiscUtils.trunc(original + diff, decimals);
+            // const decimals = 4;
+            // let diff = featureCollection.map((v, i) => {
+            //     const original = MiscUtils.trunc(v, decimals);
+            //     const transColl = MiscUtils.trunc(partialResult[colIx][i], decimals);
+            //     const diff = MiscUtils.trunc(v - partialResult[colIx][i], decimals);
+            //     const transSingle = MiscUtils.trunc(fixFFT([v], settings)[0], decimals);
+            //     const transSingleHalf = MiscUtils.trunc(transSingle / 2, decimals);
+            //     const transCollDiff = MiscUtils.trunc(original + diff, decimals);
 
-                const min = _.min(featureCollection);
-                const max = _.max(featureCollection);
+            //     const min = _.min(featureCollection);
+            //     const max = _.max(featureCollection);
 
-                const transSingle2 = MiscUtils.trunc(fixFFT(_.orderBy([min, v, max]), settings)[0], decimals);
+            //     const transSingle2 = MiscUtils.trunc(fixFFT(_.orderBy([min, v, max]), settings)[0], decimals);
 
-                return [original, transColl, diff, transCollDiff, transSingle];
-            });
+            //     return [original, transColl, diff, transCollDiff, transSingle];
+            // });
 
             // console.log("[ original, transColl, diff, transCollDiff, transSingle ]");
             // console.log(diff);
@@ -202,14 +202,6 @@ function applyFFT(data, settings) {
 
         result = tf.transpose(tf.tensor2d(partialResult)).arraySync();
     });
-
-    const real = tf.tensor1d([1, 2, 3]);
-    const imag = tf.tensor1d([1, 2, 3]);
-    const x = tf.complex(real, imag);
-
-    x.fft().print();  // tf.spectral.fft(x).print();
-
-
 
     return result;
 }

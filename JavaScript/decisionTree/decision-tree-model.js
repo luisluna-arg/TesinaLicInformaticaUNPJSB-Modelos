@@ -19,8 +19,8 @@ const DataLoadingSettings = {
     fourier: true,
     deviationMatrix: true,
     selectFeatures: false,
-    dataAugmentation: false,
-    dataAugmentationTotal: 5000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    dataAugmentation: true,
+    dataAugmentationTotal: 10000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
     minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
 };
 
@@ -253,22 +253,7 @@ class DecisionTreeModel {
     }
 
     #formatSamples(samplesToFormat, sampleLabels) {
-        let localSamples = samplesToFormat;
-        if (this.#options.normalize) {
-            localSamples = this.#normalizeFeatures(localSamples);
-        }
-        return this.#createSamples(localSamples, sampleLabels);
-    }
-
-    #normalizeFeatures(data) {
-        let result;
-
-        tf.tidy(() => {
-            let is2dTensor = data.length > 1 && Array.isArray(data[0]);
-            result = (is2dTensor ? tf.tensor2d : tf.tensor)(data).transpose().log().transpose().arraySync();
-        });
-
-        return result;
+        return this.#createSamples(samplesToFormat, sampleLabels);
     }
 
     #createSamples(sampleValues, sampleLabels) {
