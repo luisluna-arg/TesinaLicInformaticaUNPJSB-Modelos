@@ -15,7 +15,6 @@ const { preProcess } = require('./data-preprocessing');
 // /* Test data contiene datos preprocesados */
 // const testData = decisionTree.getTestData();
 // const dataSet = decisionTree.getDataSet();
-// testDataSet = testData.indexing.map(i => dataSet[i.original]);
 
 // /* TEST - El modelo se prueba con datos preprocesados */
 // /* ////////////////////////////////////////////////// */
@@ -24,7 +23,7 @@ const { preProcess } = require('./data-preprocessing');
 // let correct = 0;
 // let pedictionLabels = [];
 // let realLabels = [];
-// let testDataCount = testDataSet.length /* 6 */;
+// let testDataCount = 30;
 
 // for (let i = 0; i < testDataCount; i++) {
 //     const sample = testData.samples[i];

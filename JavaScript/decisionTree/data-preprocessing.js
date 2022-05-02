@@ -71,8 +71,6 @@ function dataSetNormalization(data, settings) {
         normalizedData = tf.transpose(tf.tensor(transposedNormalized)).arraySync()[0];
     });
 
-    // console.log("Normalizacion general", normalizedData[0]);
-
     return { normalizedData, featureStatistics };
 }
 
@@ -86,9 +84,6 @@ function sampleNormalization(sample, featureStatistics) {
     const features = sample.slice(0, sample.length);
     return featureStatistics.map((featStats, index) => {
         const feature = features[index];
-        
-        // /* Transformacion [z = (x - u) / s ] | x: valor original, u: media, s: desvio estandard */
-        // return (feature - featStats.mean) / featStats.std;
 
         /* 
         X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
@@ -97,12 +92,9 @@ function sampleNormalization(sample, featureStatistics) {
        /* Valor normalizado */
         let X_std = (feature - featStats.min) / (featStats.max - featStats.min)
         /* Valor restaurado */
-        let X_restores = X_std * (featStats.max - featStats.min) + featStats.min
+        // let X_restores = X_std * (featStats.max - featStats.min) + featStats.min
+
         result = X_std;
-        // console.log("Normalizacion individual");
-        // console.log(`x: ${feature}, min: ${featStats.min}, max: ${featStats.max}, X_std: ${X_std}, result: ${result}`);
-        // console.log(featureStatistics);
-        // console.log(result);
         return result;
     });
 }
@@ -119,7 +111,6 @@ function dataAugmentation(samples, settings) {
     const byLabel = _.groupBy(samples, (item) => item[item.length - 1]);
 
     for (const label in byLabel) {
-        // // // console.log("label", label);
         let labelGroup = byLabel[label].map(sample => sample.slice(0, sample.length - 1));
         const countToGenerate = settings.dataAugmentationTotal - labelGroup.length;
 
@@ -133,7 +124,6 @@ function dataAugmentation(samples, settings) {
         tf.tidy(() => {
             newVectors = smote.generate(countToGenerate).
                 map(vector => {
-                    // let features = vector.slice(0, maxIx);
                     /* Tipo movimiento */
                     vector.push(parseInt(label));
                     return vector;
@@ -167,21 +157,8 @@ function fixFFT(dataPoints) {
  * @returns Matriz de datos modificados por Transformada de Fourier Rápida
  */
 function applyFFT(data) {
-    // console.log("applyFFT.data", data);
-    const columnCount = data[0].length;
-    const labelColumnIndex = columnCount - 1;
     let result = [];
-
     tf.tidy(() => {
-        // let transposed = tf.transpose(tf.tensor2d(data)).arraySync();
-        // let partialResult = [];
-        // for (let colIx = 0; colIx < columnCount; colIx++) {
-        //     let featureCollection = transposed[colIx];
-        //     partialResult[colIx] = labelColumnIndex == colIx ?
-        //         featureCollection : fixFFT(featureCollection);
-        // }
-        // result = tf.transpose(tf.tensor2d(partialResult)).arraySync();
-
         for (let i = 0; i < data.length; i++) {
             let originalSample = data[i];
             let resampled = [
@@ -191,7 +168,6 @@ function applyFFT(data) {
             result.push(resampled);
         }
     });
-
     return result;
 }
 
@@ -215,10 +191,6 @@ function correlateSample(currentData, includesClass, featureStats) {
             /* Respecto de todo el dataset */
             resampled.push(currFeature - currMoments.mean);
             resampled.push(currFeature - currMoments.std);
-
-            // /* Rspecto de la muestra */
-            // resampled.push(currFeature - meanValue);
-            // resampled.push(currFeature - stdDevValue);
         }
 
         resampled.push(meanValue);
@@ -280,7 +252,6 @@ function deviationMatrix(data, featureNames, settings) {
 function filterCorrelationMatrix(data, featureNames) {
     const features = data.map(o => o.slice(0, o.length - 1));
     const correlationResult = correlation.calculateCorrelation(features);
-    // console.log("correlationResult", correlationResult);
 
     let newResult = [];
     let newFeatureNames = [];
@@ -308,14 +279,7 @@ function filterCorrelationMatrix(data, featureNames) {
 }
 
 function shuffle(samples) {
-    let indexedSamples = samples.map((s, i) => { return { index: i, sample: s } });
-    const shuffledData = _.shuffle(indexedSamples);
-    const result = {
-        data: shuffledData.map(s => s.sample),
-        indexing: shuffledData.map((s, i) => { return { index: i, original: s.index } })
-    }
-
-    return result;
+    return _.shuffle(samples);
 }
 
 function removeLower(samples, featureNames) {
@@ -324,8 +288,6 @@ function removeLower(samples, featureNames) {
         let featureMoments = featureNames.map((f, i) => {
             let values = samples.map(s => s[i]);
             let orderedValues = _.orderBy(values);
-
-            // console.log("values", values);
 
             const { mean, variance } = tf.moments(tf.tensor(values));
             return {
@@ -341,9 +303,6 @@ function removeLower(samples, featureNames) {
         result = samples.filter(o => {
             return o.slice(0, featureNames.length).filter((f, i) => f > featureMoments[i].median).length > 0
         });
-
-        // // console.log("result.length", result.length);
-
     });
     return result;
 }
@@ -378,19 +337,14 @@ function preProcess(data, dataFeatureNames, settings) {
         const normalizationResult = dataSetNormalization(result, localSettings);
         result = normalizationResult.normalizedData;
         normalizationFeatStats = normalizationResult.featureStatistics;
-        // console.log("normalization");
-        console.log(result[0]);
     }
 
     if (localSettings.filter) {
         result = removeLower(result, dataFeatureNames);
-        // console.log("fourier");
-        console.log(result[0]);
     }
 
     if (localSettings.fourier) {
         result = applyFFT(result, localSettings);
-        // console.log("result.fourier", result[0]);
     }
 
     if (localSettings.dataAugmentation) {
@@ -402,23 +356,18 @@ function preProcess(data, dataFeatureNames, settings) {
         result = devMatrix;
         dataFeatureNames = newFeatureNames;
         devMatrixStats = { gralMean, gralStd, featureStats };
-        // console.log("result.deviationMatrix", result[0]);
     }
 
     if (localSettings.truncate) {
         result = truncateNumerics(result, localSettings.decimals);
     }
 
-    let shuffleIndex = null;
     if (localSettings.shuffle) {
-        const shuffleResult = shuffle(result);
-        result = shuffleResult.data;
-        shuffleIndex = shuffleResult.indexing;
+        result = shuffle(result);
     }
 
     return {
         data: result,
-        indexing: shuffleIndex,
         featureNames: dataFeatureNames,
         stats: {
             normalizationFeat: normalizationFeatStats,
@@ -438,11 +387,10 @@ function preProcess(data, dataFeatureNames, settings) {
     };
 }
 
-function refactorSample(sample, preProcessData, dataSet) {
+function refactorSample(sample, preProcessData) {
     let result = sample;
 
     const normalizationFeatStats = preProcessData.stats.normalizationFeat;
-    const fourierStats = preProcessData.stats.fourier;
     const devMatrixStats = preProcessData.stats.devMatrix;
     const trainingSettings = preProcessData.trainingSettings;
 
@@ -454,37 +402,19 @@ function refactorSample(sample, preProcessData, dataSet) {
 
     if (trainingSettings.normalization) {
         result = sampleNormalization(result, normalizationFeatStats);
-        // console.log("normalization");
-        // console.log(result[0]);
     }
 
     if (trainingSettings.fourier) {
-        let newDataSet = JSON.parse(JSON.stringify(dataSet));
-        result.push(-1); /* Se agrega una clase -1 para respetar el shape */
-        newDataSet.push(result);
-        newDataSet = applyFFT(newDataSet);
-        result = newDataSet[newDataSet.length - 1];
-        result = result.slice(0, result.length - 1); /* Se quita la clase -1 agregada */
-        // console.log("fourier");
-        // console.log(result[0]);
-
-        // // console.log("fourier", result);
-        // result.push(-1); /* Se agrega una clase -1 para respetar el shape */
-        // result = fixFFT(result, fourierStats);
-        // result = result.slice(0, result.length - 1); /* Se quita la clase -1 agregada */
+        result = fixFFT(result);
     }
 
     if (trainingSettings.deviationMatrix) {
-        // console.log("deviationMatrix");
         let correlationResult = correlateSample(result, false, devMatrixStats.featureStats);
         result = correlationResult.sample;
-        // console.log(result);
     }
 
     if (trainingSettings.truncate) {
-        // console.log("truncate");
         result = truncateSampleNumerics(result, trainingSettings.truncateDecimals);
-        // // console.log("Truncate", result);
     }
 
     return result;

@@ -10,6 +10,7 @@ const CLASS_NAME = "moveType";
 
 const ExportBasePath = './data/';
 const DataSetExportPath = ExportBasePath + 'decisiontree-data.csv';
+const PreProcessedDataSetExportPath = ExportBasePath + 'decisiontree-preprocessed-data.csv';
 const SettingsExportPath = ExportBasePath + 'decisiontree-settings.json';
 
 const DataLoadingSettings = {
@@ -24,6 +25,7 @@ const DataLoadingSettings = {
     deviationMatrix: true,
     selectFeatures: false,
     dataSetExportPath: DataSetExportPath,
+    preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
     settingsExportPath: SettingsExportPath,
     minTolerance: 0.0, /* entre 0 y 1, 0 para que traiga todo */
     dataAugmentationTotal: 170000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
@@ -70,7 +72,7 @@ function loadData(fileBasePath) {
     DataLoadingSettings.preProcess = true;
     const preProcessResult = dataPreProcessing(loadedData, DataLoadingSettings);
     loadedData = preProcessResult.data;
-    const indexing = preProcessResult.indexing;
+    preProcessedDataSet = loadedData.getSamples();
 
     /* ENTRENAMIENTO */
     /* ///////////// */
@@ -83,38 +85,30 @@ function loadData(fileBasePath) {
     const trainingLength = Math.floor(samples.length * 0.7);
     const trainingData = samples.slice(0, trainingLength);
     const trainingLabels = labels.slice(0, trainingLength);
-    const trainingIndexing = indexing.slice(0, trainingLength);
 
     /* Data de pruebas */
     const testData = samples.slice(trainingLength);
     const testLabels = labels.slice(trainingLength);
-    const testIndexing = indexing.slice(trainingLength);
 
     // loadedData.summary();
 
     return {
         featureNames: loadedData.getFeatureNames(),
         dataSet: dataSet,
-        indexing: indexing,
+        preProcessedDataSet: preProcessedDataSet,
         training: {
             samples: trainingData,
-            labels: trainingLabels,
-            indexing: trainingIndexing
+            labels: trainingLabels
         },
         test: {
             samples: testData,
-            labels: testLabels,
-            indexing: testIndexing
+            labels: testLabels
         },
         preProcess: {
             stats: preProcessResult.stats,
             trainingSettings: preProcessResult.trainingSettings
         }
     };
-}
-
-function loadDataSet(fileBasePath) {
-
 }
 
 class Sample {
@@ -139,7 +133,7 @@ class DecisionTreeModel {
     #preProcess = null;
     #testData = {};
     #dataSet = {};
-    #indexing = null;
+    #preProcessedDataSet = {};
     #trainingData = {};
     #options = {
 
@@ -148,12 +142,12 @@ class DecisionTreeModel {
     constructor(arg) {
         if (typeof arg == 'string') {
             /* Recibe el path de archivos de entrenamiento de entrenamiento */
-            let { training, test, featureNames, preProcess, dataSet, indexing } = loadData(arg);
+            let { training, test, featureNames, preProcess, dataSet, preProcessedDataSet } = loadData(arg);
 
             this.#testData = test;
             this.#preProcess = preProcess;
             this.#dataSet = dataSet;
-            this.#indexing = indexing;
+            this.#preProcessedDataSet = preProcessedDataSet;
             this.#createModel(training.samples, training.labels, featureNames, ModelTrainingSettings);
         }
         else {
@@ -185,26 +179,7 @@ class DecisionTreeModel {
         );
 
         /* Toda muestra ajena al dataset original debe replantearse */
-        resampled = refactorSample(resampled, refactorSettings, this.#dataSet);
-
-        // let newDataSet = this.#dataSet;
-
-        // let newPredictinSample = predictionSample;
-        // newPredictinSample.push(-1); // Agregar una clase -1 para que sea compatible con el modelo
-        // newDataSet = newDataSet.slice(0, newDataSet.length - 1);
-        // newDataSet.push(predictionSample)
-        // let dataSet = preProcess(newDataSet, this.#featureNames, refactorSettings.trainingSettings);
-
-        // // let localSettings = Object.assign({}, {
-        // //     filter: false, normalization: true, fourier: true,
-        // //     deviationMatrix: true, truncate: true, decimals: 8
-        // // }, refactorSettings.trainingSettings);
-        // // console.log("refactorSettings.trainingSettings", localSettings);
-        
-        // resampled = dataSet.data[dataSet.data.length - 1];
-
-
-        // console.log("resampled", resampled);
+        resampled = refactorSample(resampled, refactorSettings);
 
         return this.#decisionTree.predict(new Sample(resampled, this.#featureNames));
     }
@@ -215,10 +190,6 @@ class DecisionTreeModel {
 
     getDataSet() {
         return this.#dataSet;
-    }
-
-    getDataSetIndexing() {
-        return this.#indexing;
     }
 
     getTrainingData() {
@@ -250,28 +221,27 @@ class DecisionTreeModel {
 
     /**
      * Exporta el dataset del modelo a un CSV.
-     * Tiene como fin dejar el dataset manipulable para poder calcular fourier 
-     * al aplicar sobre una unica muestra.
      */
     exportDataSet() {
         let localSettings = Object.assign({}, DataLoadingSettings, {
-            // normalization: true,
-            // fourier: false,
-            // deviationMatrix: false,
             dataAugmentation: false,
-            // truncate: false
         });
 
         const path = !MiscUtils.isNullOrUndef(localSettings.dataSetExportPath) ?
             localSettings.dataSetExportPath : DataSetExportPath;
 
-        // let dataSetNoClass = this.#dataSet.map(o => o.slice(0, o.length - 1));
-        // dataSetNoClass.push();
-
-        // let preProcessedData = preProcess(this.#dataSet, this.#featureNames, localSettings);
-
-        // MiscUtils.writeDataSetCSV(path, preProcessedData.data);
         MiscUtils.writeDataSetCSV(path, this.#dataSet);
+    }
+
+    exportPreProcessDataSet() {
+        let localSettings = Object.assign({}, DataLoadingSettings, {
+            dataAugmentation: false,
+        });
+
+        const path = !MiscUtils.isNullOrUndef(localSettings.preProcessedDataSetExportPath) ?
+            localSettings.preProcessedDataSetExportPath : PreProcessedDataSetExportPath;
+
+        MiscUtils.writeDataSetCSV(path, this.#preProcessedDataSet);
     }
 
     exportSettings() {
@@ -284,9 +254,9 @@ class DecisionTreeModel {
 
     /* **************************************************************************** */
 
-
     /* Metodos privados */
     /* **************** */
+
     #createModel(...args) {
         let argIndex = 0;
         this.#trainingData.samples = args[argIndex++];
@@ -313,8 +283,6 @@ class DecisionTreeModel {
         }
 
         this.#decisionTree = new DecisionTree(CLASS_NAME, this.#featureNames);
-        // this.#trainingData.labels = this.#trainingData.labels.map(o => o.toString());
-        // this.#trainingData.samples = this.#formatSamples(this.#trainingData.samples, this.#trainingData.labels);
         this.#train();
     }
 

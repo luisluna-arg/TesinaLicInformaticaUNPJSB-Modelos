@@ -227,7 +227,6 @@ function dataPreProcessing(readData, localSettings) {
 
   return {
     data: readData,
-    indexing: preProcessResult.indexing,
     stats: preProcessResult.stats,
     trainingSettings: preProcessResult.trainingSettings
   };
