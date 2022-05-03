@@ -1,32 +1,21 @@
 const MiscUtils = require('./misc-utils');
 const { MOVE_TYPE, loadJSON, splitData, dataPreProcessing } = require('./load-training-json');
-const { refactorSample } = require('./data-preprocessing');
+const { refactorSample, confusionMatrix } = require('./data-preprocessing');
 const Bayes = require('bayes');
 
 const CLASS_NAME = "moveType";
 
-const MoveTypeEnum = {
-    NONE: 0,
-    DOWN: 1,
-    UP: 2,
-    LEFT: 3,
-    RIGHT: 4
-}
-
-const MoveTypeTokens = [
-    'NONE',
-    'DOWN',
-    'UP',
-    'LEFT',
-    'RIGHT'
-];
-
 /* SETTINGS */
 /* //////// */
 
+const ExportBasePath = './data/';
+const DataSetExportPath = ExportBasePath + 'naivebayes-data.csv';
+const PreProcessedDataSetExportPath = ExportBasePath + 'naivebayes-preprocessed-data.csv';
+const SettingsExportPath = ExportBasePath + 'naivebayes-settings.json';
+
 const DataLoadingSettings = {
     preProcess: false,
-    filter: false,
+    filter: true,
     shuffle: true,
     split: false,
     truncate: true,
@@ -35,9 +24,12 @@ const DataLoadingSettings = {
     fourier: true,
     deviationMatrix: true,
     selectFeatures: false,
-    dataAugmentation: false,
-    dataAugmentationTotal: 10000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
-    minTolerance: 0.0 /* entre 0 y 1, 0 para que traiga todo */
+    dataSetExportPath: DataSetExportPath,
+    preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
+    settingsExportPath: SettingsExportPath,
+    minTolerance: 0.0, /* entre 0 y 1, 0 para que traiga todo */
+    dataAugmentationTotal: 170000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    dataAugmentation: false
 };
 
 const ModelTrainingSettings = {
@@ -80,6 +72,7 @@ function loadData(fileBasePath) {
     DataLoadingSettings.preProcess = true;
     const preProcessResult = dataPreProcessing(loadedData, DataLoadingSettings);
     loadedData = preProcessResult.data;
+    preProcessedDataSet = loadedData.getSamples();
 
     /* ENTRENAMIENTO */
     /* ///////////// */
@@ -102,6 +95,7 @@ function loadData(fileBasePath) {
     return {
         featureNames: loadedData.getFeatureNames(),
         dataSet: dataSet,
+        preProcessedDataSet: preProcessedDataSet,
         training: {
             samples: trainingData,
             labels: trainingLabels
@@ -111,9 +105,7 @@ function loadData(fileBasePath) {
             labels: testLabels
         },
         preProcess: {
-            normalizationFeatStats: preProcessResult.normalizationFeatStats,
-            deviationMatrixStats: preProcessResult.deviationMatrixStats,
-            fourierStats: preProcessResult.fourierStats,
+            stats: preProcessResult.stats,
             trainingSettings: preProcessResult.trainingSettings
         }
     };
@@ -145,14 +137,17 @@ class NaiveBayesModel {
     #options = null;
     #trainingFinished = null;
     #trainingPromise = null;
+    #preProcessedDataSet = {};
 
     constructor(arg) {
         if (typeof arg == 'string') {
-            /* Recibe el path de archivos de entrenamiento de entrenamiento */
-            let { training, test, featureNames, preProcess, dataSet } = loadData(arg);
+            /* Recibe el path de archivos de entrenamiento */
+            let { training, test, featureNames, preProcess, dataSet, preProcessedDataSet } = loadData(arg);
+
             this.#testData = test;
             this.#preProcess = preProcess;
             this.#dataSet = dataSet;
+            this.#preProcessedDataSet = preProcessedDataSet;
             this.#createModel(training.samples, training.labels, featureNames, ModelTrainingSettings);
         }
         else {
@@ -169,10 +164,23 @@ class NaiveBayesModel {
     }
 
     predict(predictionSample) {
-        let localSample = predictionSample;
+        let resampled = predictionSample;
+
+        let refactorSettings = Object.assign({}, this.#preProcess);
+        refactorSettings.trainingSettings = Object.assign(
+            {}, refactorSettings.trainingSettings
+            , {
+                normalization: true,
+                fourier: true,
+                dataAugmentation: false,
+                shuffle: false
+            }
+        );
+
         /* Toda muestra ajena al dataset original debe replantearse */
-        localSample = refactorSample(localSample, this.#preProcess);
-        return this.predictPreProcessed(localSample);
+        resampled = refactorSample(resampled, refactorSettings);
+
+        return this.predictPreProcessed(resampled);
     }
 
     getFeatureNames() {
@@ -192,7 +200,6 @@ class NaiveBayesModel {
     }
 
     whenTrained(callback) {
-        console.log("whenTrained(callback)");
         this.#trainingFinished.then(callback);
     }
 
@@ -200,8 +207,10 @@ class NaiveBayesModel {
         return {
             modelRebuildSettings: this.#classifier.toJson(),
             trainAccuracy: this.#trainAccuracy,
+            testAccuracy: this.#testAccuracy,
             preProcess: this.#preProcess,
-            featureNames: this.#featureNames
+            featureNames: this.#featureNames,
+            options: this.#options
         };
     }
 
@@ -209,18 +218,52 @@ class NaiveBayesModel {
         MiscUtils.printHeader("Resultados de modelo")
         console.log(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
         console.log(`Muestras de test: ${this.#testData.samples.length}`);
-        // console.log(`Precision de entrenamiento: ${MiscUtils.trunc(this.#trainAccuracy * 100, 2)} % de acierto`);
-        // console.log(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
+        console.log(`Precision de entrenamiento: ${MiscUtils.trunc(this.#trainAccuracy * 100, 2)} % de acierto`);
+        console.log(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
     }
+
+    /**
+     * Exporta el dataset del modelo a un CSV.
+     */
+     exportDataSet() {
+        let localSettings = Object.assign({}, DataLoadingSettings, {
+            dataAugmentation: false,
+        });
+
+        const path = !MiscUtils.isNullOrUndef(localSettings.dataSetExportPath) ?
+            localSettings.dataSetExportPath : DataSetExportPath;
+
+        MiscUtils.writeDataSetCSV(path, this.#dataSet);
+    }
+
+    exportPreProcessDataSet() {
+        let localSettings = Object.assign({}, DataLoadingSettings, {
+            dataAugmentation: false,
+        });
+
+        const path = !MiscUtils.isNullOrUndef(localSettings.preProcessedDataSetExportPath) ?
+            localSettings.preProcessedDataSetExportPath : PreProcessedDataSetExportPath;
+
+        MiscUtils.writeDataSetCSV(path, this.#preProcessedDataSet);
+    }
+
+    exportSettings() {
+        let localSettings = Object.assign({}, DataLoadingSettings, { });
+        const path = !MiscUtils.isNullOrUndef(localSettings.dataSetExportPath) ?
+            localSettings.settingsExportPath : SettingsExportPath;
+        MiscUtils.writeJSON(path, this.toJSON());
+    }
+
+    /* **************************************************************************** */
 
     /* Metodos privados */
     /* **************** */
+
     #createModel(...args) {
         let argIndex = 0;
         this.#trainingData.samples = args[argIndex++];
         this.#trainingData.labels = args[argIndex++];
         this.#featureNames = args[argIndex++];
-        this.#options = args[argIndex++];
 
         if (typeof this.#trainingData.samples == 'undefined' || this.#trainingData.samples == null || this.#trainingData.samples.length == 0) {
             throw 'Coleccion features no valida';
@@ -241,7 +284,6 @@ class NaiveBayesModel {
             throw 'Coleccion labels no valida';
         }
 
-        let self = this;
         let trainingPromise = {};
 
         this.#classifier = Bayes()
@@ -253,42 +295,38 @@ class NaiveBayesModel {
         this.#train();
     }
 
-    #rebuildModel(...args) {
-        let argIndex = 0;
-        const jsonSettings = args[argIndex++];
-
+    #rebuildModel(jsonSettings) {
         this.#JSONTrained = true;
 
         let modelRebuildJson = jsonSettings.modelRebuildSettings;
         this.#featureNames = jsonSettings.featureNames;
         this.#trainAccuracy = jsonSettings.trainAccuracy;
         this.#preProcess = jsonSettings.preProcess;
+        this.#options = jsonSettings.options;
+
+        if (!MiscUtils.isNullOrUndef(DataLoadingSettings.dataSetExportPath)) {
+            /* TODO Es necesario? */
+            this.#dataSet = MiscUtils.readDataSetCSV(DataLoadingSettings.dataSetExportPath);
+        }
 
         this.#classifier = Bayes.fromJson(modelRebuildJson);
     }
 
     async #train() {
         let self = this;
-        const trainingLabels = this.#trainingData.labels.map(o => o.toString());
-        const trainingSamples = this.#formatSamples(this.#trainingData.samples, trainingLabels);
+        const trainingLabels = self.#trainingData.labels.map(o => o.toString());
+        const trainingSamples = self.#formatSamples(self.#trainingData.samples, trainingLabels);
 
         let promises = [];
         for (let i = 0; i < trainingSamples.length; i++) {
             const pair = trainingSamples[i];
-            promises.push(this.#classifier.learn(pair.word, pair.label));
+            promises.push(self.#classifier.learn(pair.word, pair.label));
         }
 
-        console.log("#train");
-        let trainingSolver = this.#trainingPromise.resolve;
+        let trainingSolver = self.#trainingPromise.resolve;
         Promise.all(promises).then(() => {
             trainingSolver();
         });
-
-        // this.#trainAccuracy = this.#classifier.evaluate(trainingSamples);
-
-        // const testLabelsForEval = this.#testData.labels.map(o => o.toString());
-        // const testSamplesForEval = this.#formatSamples(this.#testData.samples, testLabelsForEval);
-        // this.#testAccuracy = this.#classifier.evaluate(testSamplesForEval);
     }
 
     #createWord(sample) {
@@ -308,5 +346,6 @@ class NaiveBayesModel {
 }
 
 module.exports = {
-    NaiveBayesModel
+    NaiveBayesModel,
+    confusionMatrix
 }
