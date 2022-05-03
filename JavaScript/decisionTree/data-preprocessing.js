@@ -35,10 +35,9 @@ function truncateNumerics(dataCollection, decimals) {
  * @param {*} data DatoSet a normalizar
  * @returns DatoSet normalizado
  */
-function dataSetNormalization(data, settings) {
+function dataSetNormalization(data) {
     let normalizedData = [];
 
-    // let scaler = new dfd.StandardScaler()
     let scaler = new dfd.MinMaxScaler()
 
     const labelColumnIndex = data[0].length - 1;
@@ -334,7 +333,7 @@ function preProcess(data, dataFeatureNames, settings) {
     }
 
     if (localSettings.fourier || localSettings.normalization) {
-        const normalizationResult = dataSetNormalization(result, localSettings);
+        const normalizationResult = dataSetNormalization(result);
         result = normalizationResult.normalizedData;
         normalizationFeatStats = normalizationResult.featureStatistics;
     }

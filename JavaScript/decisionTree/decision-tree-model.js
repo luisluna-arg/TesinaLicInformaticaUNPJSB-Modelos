@@ -135,13 +135,11 @@ class DecisionTreeModel {
     #dataSet = {};
     #preProcessedDataSet = {};
     #trainingData = {};
-    #options = {
-
-    };
+    #options = {};
 
     constructor(arg) {
         if (typeof arg == 'string') {
-            /* Recibe el path de archivos de entrenamiento de entrenamiento */
+            /* Recibe el path de archivos de entrenamiento */
             let { training, test, featureNames, preProcess, dataSet, preProcessedDataSet } = loadData(arg);
 
             this.#testData = test;
@@ -296,6 +294,7 @@ class DecisionTreeModel {
         this.#options = jsonSettings.options;
 
         if (!MiscUtils.isNullOrUndef(DataLoadingSettings.dataSetExportPath)) {
+            /* TODO Es necesario? */
             this.#dataSet = MiscUtils.readDataSetCSV(DataLoadingSettings.dataSetExportPath);
         }
 

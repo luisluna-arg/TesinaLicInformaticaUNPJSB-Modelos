@@ -68,7 +68,6 @@ let sampleStartTime;
 for (let i = 0; i < testDataCount; i++) {
     sampleStartTime = new Date().getTime()
     const originalSample = testDataSet[i];
-    // console.log("originalSample", originalSample);
     const sample = originalSample.slice(0, originalSample.length - 1);
     const prediction = decisionTreeJSON.predict(sample);
     const realLabel = originalSample[originalSample.length - 1];
