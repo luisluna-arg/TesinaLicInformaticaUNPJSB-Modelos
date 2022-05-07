@@ -88,7 +88,7 @@ function sampleNormalization(sample, featureStatistics) {
         X_std = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
         X_scaled = X_std * (max - min) + min 
         */
-       /* Valor normalizado */
+        /* Valor normalizado */
         let X_std = (feature - featStats.min) / (featStats.max - featStats.min)
         /* Valor restaurado */
         // let X_restores = X_std * (featStats.max - featStats.min) + featStats.min
@@ -160,10 +160,8 @@ function applyFFT(data) {
     tf.tidy(() => {
         for (let i = 0; i < data.length; i++) {
             let originalSample = data[i];
-            let resampled = [
-                ...fixFFT(originalSample.slice(0, originalSample.length - 1)), 
-                ...originalSample.slice(originalSample.length - 1)
-            ];
+            let featureValues = originalSample.slice(0, originalSample.length - 1);
+            let resampled = [...fixFFT(featureValues), originalSample[originalSample.length - 1]];
             result.push(resampled);
         }
     });
@@ -281,6 +279,38 @@ function shuffle(samples) {
     return _.shuffle(samples);
 }
 
+function remapLower(samples, featureNames) {
+    let result = [];
+    let featureMoments;
+    tf.tidy(() => {
+        featureMoments = featureNames.map((f, i) => {
+            let values = samples.map(s => s[i]);
+            let orderedValues = _.orderBy(values);
+
+            const { mean, variance } = tf.moments(tf.tensor(values));
+            return {
+                mean: mean.arraySync(),
+                std: tf.sqrt(variance).arraySync(),
+                min: _.min(values),
+                max: _.max(values),
+                median: orderedValues[Math.floor(orderedValues.length / 2)],
+            }
+        });
+
+        result = samples.map((sample, i) => {
+            const featValues = sample.slice(0, featureNames.length);
+            const doRemap = featValues.filter((feat, i) => feat > featureMoments[i].mean).length > 0;
+            let result = [...featValues, doRemap ? 0 : sample[featureNames.length]];
+            return result;
+        });
+    });
+
+    return {
+        data: result,
+        featureStats: featureMoments
+    };
+}
+
 function removeLower(samples, featureNames) {
     let result = samples;
     tf.tidy(() => {
@@ -325,6 +355,7 @@ function preProcess(data, dataFeatureNames, settings) {
     let result = data;
     let normalizationFeatStats = null;
     let devMatrixStats = null;
+    let filterStats = null;
 
     if (localSettings.selectFeatures) {
         let { updatedSamples, updatedFeatureNames } = filterCorrelationMatrix(result, dataFeatureNames);
@@ -339,7 +370,9 @@ function preProcess(data, dataFeatureNames, settings) {
     }
 
     if (localSettings.filter) {
-        result = removeLower(result, dataFeatureNames);
+        let filterResult = remapLower(result, dataFeatureNames);
+        result = filterResult.data;
+        filterStats = filterResult.featureStats;
     }
 
     if (localSettings.fourier) {
@@ -371,6 +404,7 @@ function preProcess(data, dataFeatureNames, settings) {
         stats: {
             normalizationFeat: normalizationFeatStats,
             devMatrix: devMatrixStats,
+            filter: filterStats
         },
         trainingSettings: {
             selectedFeatures: dataFeatureNames,
@@ -423,16 +457,15 @@ function confusionMatrix(pedictionLabels, realLabels) {
     let result = null;
     tf.tidy(() => {
         /* Las label son 0-based */
-        const labels = tf.tensor1d(realLabels.map(o => o - 1), 'int32');
-        const predictions = tf.tensor1d(pedictionLabels.map(o => o - 1), 'int32');
-        const numClasses = 4;
-        let out = tf.math.confusionMatrix(labels, predictions, numClasses);
-        out = out.arraySync();
+        const labels = tf.tensor1d(realLabels.map(o => o), 'int32');
+        const predictions = tf.tensor1d(pedictionLabels.map(o => o), 'int32');
+        const numClasses = [...new Set([...pedictionLabels, ...realLabels])].length;
 
-        let matrix = [['', '|', ...out[0].map((v, i) => i + 1)]];
+        let out = tf.math.confusionMatrix(labels, predictions, numClasses).arraySync();
 
+        let matrix = [[' ', '|', ...out[0].map((v, i) => i)]];
         for (let i = 0; i < out.length; i++) {
-            matrix.push([i + 1, '|', ...out[i]]);
+            matrix.push([i, '|', ...out[i]]);
         }
 
         result = {
@@ -453,5 +486,6 @@ function confusionMatrix(pedictionLabels, realLabels) {
 module.exports = {
     preProcess,
     refactorSample,
-    confusionMatrix
+    confusionMatrix,
+    sampleNormalization
 };

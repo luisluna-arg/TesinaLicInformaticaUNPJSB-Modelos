@@ -82,7 +82,7 @@ function writeJSON(filePath, jsonData) {
 
 module.exports = {
     printHeader,
-    printHeader,
+    printSubHeader,
     getArrayShape,
     isNullOrUndef,
     trunc,

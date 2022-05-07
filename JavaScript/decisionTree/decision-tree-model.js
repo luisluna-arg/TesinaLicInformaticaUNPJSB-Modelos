@@ -28,7 +28,7 @@ const DataLoadingSettings = {
     preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
     settingsExportPath: SettingsExportPath,
     minTolerance: 0.0, /* entre 0 y 1, 0 para que traiga todo */
-    dataAugmentationTotal: 170000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    dataAugmentationTotal: 100000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
     dataAugmentation: true
 };
 
@@ -159,7 +159,8 @@ class DecisionTreeModel {
 
     predictPreProcessed(predictionSample) {
         let localSample = predictionSample;
-        return this.#decisionTree.predict(new Sample(localSample, this.#featureNames));
+        let predicted = this.#decisionTree.predict(new Sample(localSample, this.#featureNames));
+        return typeof predicted == 'string' ? parseInt(predicted) : predicted;
     }
 
     predict(predictionSample) {
@@ -179,7 +180,8 @@ class DecisionTreeModel {
         /* Toda muestra ajena al dataset original debe replantearse */
         resampled = refactorSample(resampled, refactorSettings);
 
-        return this.#decisionTree.predict(new Sample(resampled, this.#featureNames));
+        let predicted = this.#decisionTree.predict(new Sample(resampled, this.#featureNames));
+        return typeof predicted == 'string' ? parseInt(predicted) : predicted;
     }
 
     getFeatureNames() {
