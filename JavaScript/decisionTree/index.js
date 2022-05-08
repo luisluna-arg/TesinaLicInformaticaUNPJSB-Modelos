@@ -65,6 +65,7 @@ function trainModel() {
     printConfusionMatrix(predictionLabels, realLabels);
 
     decisionTree.exportDataSet();
+    decisionTree.exportPreProcessDataSet();
     decisionTree.exportSettings();
 
     console.log(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`);
