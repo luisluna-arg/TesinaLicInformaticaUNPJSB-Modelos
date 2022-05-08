@@ -15,7 +15,7 @@ const SettingsExportPath = ExportBasePath + 'decisiontree-settings.json';
 
 const DataLoadingSettings = {
     preProcess: false,
-    filter: true,
+    classRemap: true, /* Determina si se remapea una clase segun un criterio de limpieza de ruido */
     shuffle: true,
     split: false,
     truncate: true,
@@ -23,13 +23,12 @@ const DataLoadingSettings = {
     normalization: true,
     fourier: true,
     deviationMatrix: true,
-    selectFeatures: false,
     dataSetExportPath: DataSetExportPath,
     preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
     settingsExportPath: SettingsExportPath,
     minTolerance: 0.0, /* entre 0 y 1, 0 para que traiga todo */
     dataAugmentationTotal: 100000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
-    dataAugmentation: true
+    dataAugmentation: false
 };
 
 const ModelTrainingSettings = {

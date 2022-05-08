@@ -7,59 +7,72 @@ const { sampleNormalization } = require('./data-preprocessing');
 /* ////////////////////////////////////////////////// */
 /* ////////////////////////////////////////////////// */
 
-const zeroPad = (num, places) => String(num).padStart(places, '0')
+const blankPad = (num, places) => String(num).padStart(places, ' ');
 
-/* Descomentar esta seccion para reentrenar el modelo */
-let startTime = new Date();
-MiscUtils.printHeader(`Inicio: ${startTime.toLocaleString()}`);
+function printConfusionMatrix(predictionLabels, realLabels) {
+    let confMat = { matrix: null };
+    MiscUtils.printHeader("Matriz de confusión");
+    confMat = confusionMatrix(predictionLabels, realLabels);
 
-MiscUtils.printHeader("Carga, preprocesamiento de datos y entrenamiento");
-const decisionTree = new DecisionTreeModel('./data');
+    let zeroPadCount = _.max(_.flatten(confMat.matrix).filter(o => !isNaN(o))).toString().length;
 
-/* Test data contiene datos preprocesados */
-const testData = decisionTree.getTestData();
-
-/* TEST - El modelo se prueba con datos preprocesados */
-/* ////////////////////////////////////////////////// */
-let correct = 0;
-let pedictionLabels = [];
-let realLabels = [];
-let testDataCount = testData.samples.length; // 30;
-
-for (let i = 0; i < testDataCount; i++) {
-    const sample = testData.samples[i];
-    const prediction = decisionTree.predictPreProcessed(sample);
-    const realLabel = testData.labels[i];
-    // console.log("prediction", prediction);
-    // console.log("realLabel", realLabel);
-    pedictionLabels.push(prediction);
-    realLabels.push(realLabel);
-    correct += prediction == realLabel ? 1 : 0;
+    for (let i = 0; i < confMat.matrix.length; i++) {
+        console.log(confMat.matrix[i].
+            map((m, j) => {
+                if (m == '|') return m;
+                if (i == 0 && j == 0) return new Array(zeroPadCount + 1).join(' ');
+                return blankPad(m, zeroPadCount)
+            }).join(' '));
+    }
+    console.log(``);
+    console.log(`Listas real/predicción: ${confMat.realLabelCount}/${confMat.predictionCount}`);
+    console.log(`Precisión: ${MiscUtils.trunc(confMat.precision * 100, 2)}%`);
+    console.log(``);
 }
 
-MiscUtils.printHeader("Resultados Test");
-console.log(`Correct: ${correct} | Total: ${testData.samples.length}`);
-decisionTree.summary();
-MiscUtils.printHeader("Matriz de confusión");
+function trainModel() {
+    let startTime = new Date();
+    MiscUtils.printHeader(`Inicio de entrenamiento: ${startTime.toLocaleString()}`);
 
-let confMat = confusionMatrix(pedictionLabels, realLabels);
-// for (let i = 0; i < confMat.matrix.length; i++) {
-//     console.log(confMat.matrix[i].
-//     map((m, j) => {
-//         if (m == '|') return m;
-//         if (i == 0 && j == 0) return '  ';
-//         return zeroPad(m, 2)
-//     }).join(' '));
-// }
-console.log(``);
-console.log(`Listas real/predicción: ${confMat.realLabelCount}/${confMat.predictionCount}`);
-console.log(`Precisión: ${MiscUtils.trunc(confMat.precision * 100, 2)}%`);
-console.log(``);
+    MiscUtils.printHeader("Carga, preprocesamiento de datos y entrenamiento");
+    const decisionTree = new DecisionTreeModel('./data');
 
-decisionTree.exportDataSet();
-decisionTree.exportSettings();
+    /* Test data contiene datos preprocesados */
+    const testData = decisionTree.getTestData();
 
-console.log(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`);
+    /* TEST - El modelo se prueba con datos preprocesados */
+    /* ////////////////////////////////////////////////// */
+    let correct = 0;
+    let predictionLabels = [];
+    let realLabels = [];
+    let testDataCount = testData.samples.length; // 30;
+
+    for (let i = 0; i < testDataCount; i++) {
+        const sample = testData.samples[i];
+        const prediction = decisionTree.predictPreProcessed(sample);
+        const realLabel = testData.labels[i];
+        // console.log("prediction", prediction);
+        // console.log("realLabel", realLabel);
+        predictionLabels.push(prediction);
+        realLabels.push(realLabel);
+        correct += prediction == realLabel ? 1 : 0;
+    }
+
+    MiscUtils.printHeader("Resultados Test");
+    console.log(`Correct: ${correct} | Total: ${testData.samples.length}`);
+    decisionTree.summary();
+
+    printConfusionMatrix(predictionLabels, realLabels);
+
+    decisionTree.exportDataSet();
+    decisionTree.exportSettings();
+
+    console.log(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`);
+}
+
+/* Comentar esta seccion para no entrenar el modelo */
+trainModel();
+
 
 
 
@@ -124,21 +137,8 @@ for (let i = 0; i < testDataCount; i++) {
 MiscUtils.printSubHeader("Resultados");
 console.log(`Datos entrenamiento | Test: ${MiscUtils.trunc(trainingJSONLoaded.testAccuracy * 100, 2)}% | Precisión: ${MiscUtils.trunc(trainingJSONLoaded.trainAccuracy * 100, 2)}%`);
 console.log(`Correctos/Total: ${correct}/${testDataCount} | Precisión test JSON: ${MiscUtils.trunc(correct / testDataCount * 100, 2)}%`);
-MiscUtils.printSubHeader("Matriz de confusion JSON");
-console.log(``);
 
-let confMatJSON = confusionMatrix(pedictionLabelsJSON, realLabelsJSON);
-for (let i = 0; i < confMatJSON.matrix.length; i++) {
-    console.log(confMatJSON.matrix[i].
-        map((m, j) => {
-            if (m == '|') return m;
-            if (i == 0 && j == 0) return '  ';
-            return zeroPad(m, 2)
-        }).join(' '));
-}
-console.log(``);
-console.log(`Lista real/predicción: ${confMatJSON.realLabelCount}/${confMatJSON.predictionCount}`);
-console.log(`Precisión: ${MiscUtils.trunc(confMatJSON.precision * 100, 2)}%`);
-console.log(``);
+printConfusionMatrix(pedictionLabelsJSON, realLabelsJSON);
+
 console.log(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`);
 
