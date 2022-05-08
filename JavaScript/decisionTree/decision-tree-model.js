@@ -27,8 +27,8 @@ const DataLoadingSettings = {
     preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
     settingsExportPath: SettingsExportPath,
     minTolerance: 0.0, /* entre 0 y 1, 0 para que traiga todo */
-    dataAugmentationTotal: 100000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
-    dataAugmentation: false
+    dataAugmentationTotal: 175000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    dataAugmentation: true
 };
 
 const ModelTrainingSettings = {
