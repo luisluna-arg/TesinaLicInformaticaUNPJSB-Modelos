@@ -15,7 +15,7 @@ const SettingsExportPath = ExportBasePath + 'naivebayes-settings.json';
 
 const DataLoadingSettings = {
     preProcess: false,
-    filter: true,
+    classRemap: true,
     shuffle: true,
     split: false,
     truncate: true,
@@ -23,13 +23,12 @@ const DataLoadingSettings = {
     normalization: true,
     fourier: true,
     deviationMatrix: true,
-    selectFeatures: false,
     dataSetExportPath: DataSetExportPath,
     preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
     settingsExportPath: SettingsExportPath,
     minTolerance: 0.0, /* entre 0 y 1, 0 para que traiga todo */
-    dataAugmentationTotal: 170000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
-    dataAugmentation: false
+    dataAugmentationTotal: 175000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    dataAugmentation: true
 };
 
 const ModelTrainingSettings = {
@@ -199,6 +198,10 @@ class NaiveBayesModel {
         return this.#testData;
     }
 
+    setTestAccuracy(accuracy) {
+        this.#testAccuracy = accuracy;
+    }
+
     whenTrained(callback) {
         this.#trainingFinished.then(callback);
     }
@@ -218,14 +221,13 @@ class NaiveBayesModel {
         MiscUtils.printHeader("Resultados de modelo")
         console.log(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
         console.log(`Muestras de test: ${this.#testData.samples.length}`);
-        console.log(`Precision de entrenamiento: ${MiscUtils.trunc(this.#trainAccuracy * 100, 2)} % de acierto`);
         console.log(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
     }
 
     /**
      * Exporta el dataset del modelo a un CSV.
      */
-     exportDataSet() {
+    exportDataSet() {
         let localSettings = Object.assign({}, DataLoadingSettings, {
             dataAugmentation: false,
         });
@@ -248,7 +250,7 @@ class NaiveBayesModel {
     }
 
     exportSettings() {
-        let localSettings = Object.assign({}, DataLoadingSettings, { });
+        let localSettings = Object.assign({}, DataLoadingSettings, {});
         const path = !MiscUtils.isNullOrUndef(localSettings.dataSetExportPath) ?
             localSettings.settingsExportPath : SettingsExportPath;
         MiscUtils.writeJSON(path, this.toJSON());
