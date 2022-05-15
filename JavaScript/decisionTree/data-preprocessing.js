@@ -259,10 +259,10 @@ function remapLower(samples, featureNames) {
 
             const { mean, variance } = tf.moments(tf.tensor(featureSamples));
             return {
-                mean: mean.arraySync(),
-                std: tf.sqrt(variance).arraySync(),
                 min: _.min(featureSamples),
                 max: _.max(featureSamples),
+                mean: mean.arraySync(),
+                std: tf.sqrt(variance).arraySync(),
                 q1: orderedValues[Math.floor(orderedValues.length / 4)],
                 median: orderedValues[Math.floor(orderedValues.length / 2)],
                 q3: orderedValues[Math.floor(orderedValues.length / 4 * 3)],
@@ -272,7 +272,7 @@ function remapLower(samples, featureNames) {
         result = samples.map((sample, i) => {
             const featValues = sample.slice(0, featureNames.length);
             const doRemap = featValues.filter((feat, i) => feat > featureMoments[i].q3).length > 0;
-            let result = [...featValues, doRemap ? 0 : sample[featureNames.length]];
+            let result = [...featValues, doRemap ? 0 : sample[sample.length - 1]];
             return result;
         });
     });
@@ -440,7 +440,6 @@ function confusionMatrix(predictionLabels, realLabels) {
             const labels = tf.tensor1d(realLabels.map(o => o), 'int32');
             const predictions = tf.tensor1d(predictionLabels.map(o => o), 'int32');
             const numClasses = _.max([...new Set([...predictionLabels, ...realLabels])]) + 1;
-
             out = tf.math.confusionMatrix(labels, predictions, numClasses).arraySync();
         });
     }
