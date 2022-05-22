@@ -2,7 +2,7 @@
 
 *************************************************
 
-Inicio de entrenamiento: 22/5/2022 14:36:28
+Inicio de entrenamiento: 22/5/2022 14:47:56
 ===========================================
 
 Carga, preprocesamiento de datos y entrenamiento
@@ -10,7 +10,7 @@ Carga, preprocesamiento de datos y entrenamiento
 
 Resultados Test
 ===============
-Correct: 619 | Total: 1197
+Correct: 635 | Total: 1197
 
 > Conteo por label
 Remapeo a label 0 con valores de muestra menores a su media
@@ -21,25 +21,25 @@ Remapeo a label 0 con valores de muestra menores a su media
 4: 511
 Muestras de entrenamiento: 2793
 Muestras de test: 1197
-Precision de test: 51.71 % de acierto
+Precision de test: 53.05 % de acierto
 
 Matriz de confusión
 ===================
     |   0   1   2   3   4
-  0 | 513   5   4   0   0
-  1 |  79  33  25  11  24
-  2 |  85  41  42  24  19
-  3 |  67  18  20  13  20
-  4 |  82  26  22   6  18
+  0 | 508   2   1   1   2
+  1 |  80  44  19  21  25
+  2 |  82  38  46  23  29
+  3 |  60  23  15  12  11
+  4 |  87  17  12  14  25
 
 Listas real/predicción: 1197/1197
-Precisión: 51.71%
+Precisión: 53.05%
 
 
 
 *************************************************
 
-Inicio de entrenamiento: 22/5/2022 14:36:44
+Inicio de entrenamiento: 22/5/2022 14:48:53
 ===========================================
 
 Carga, preprocesamiento de datos y entrenamiento
@@ -47,7 +47,7 @@ Carga, preprocesamiento de datos y entrenamiento
 
 Resultados Test
 ===============
-Correct: 908 | Total: 1197
+Correct: 926 | Total: 1197
 
 > Conteo por label
 Remapeo a label 0 con valores de muestra menores a su desvío standard
@@ -58,25 +58,25 @@ Remapeo a label 0 con valores de muestra menores a su desvío standard
 4: 192
 Muestras de entrenamiento: 2793
 Muestras de test: 1197
-Precision de test: 75.86 % de acierto
+Precision de test: 77.36 % de acierto
 
 Matriz de confusión
 ===================
     |   0   1   2   3   4
-  0 | 873   0   0   0   0
-  1 |  62  16   5   8   5
-  2 |  62  13  14  10   5
-  3 |  49   4   7   3   5
-  4 |  40   7   1   6   2
+  0 | 892   0   0   0   0
+  1 |  61  16  17   6   7
+  2 |  51  17  11   8   7
+  3 |  34   4   3   5   3
+  4 |  40   7   4   2   2
 
 Listas real/predicción: 1197/1197
-Precisión: 75.86%
+Precisión: 77.36%
 
 
 
 *************************************************
 
-Inicio de entrenamiento: 22/5/2022 14:37:19
+Inicio de entrenamiento: 22/5/2022 14:50:44
 ===========================================
 
 Carga, preprocesamiento de datos y entrenamiento
@@ -84,7 +84,7 @@ Carga, preprocesamiento de datos y entrenamiento
 
 Resultados Test
 ===============
-Correct: 358 | Total: 1197
+Correct: 347 | Total: 1197
 
 > Conteo por label
 Remapeo a label 0 con valores de muestra menores a su Q1
@@ -95,25 +95,25 @@ Remapeo a label 0 con valores de muestra menores a su Q1
 4: 999
 Muestras de entrenamiento: 2793
 Muestras de test: 1197
-Precision de test: 29.91 % de acierto
+Precision de test: 28.99 % de acierto
 
 Matriz de confusión
 ===================
     |   0   1   2   3   4
-  0 |   0   0   0   0   1
-  1 |   0  76  57  91 105
-  2 |   0  65  84  78  66
-  3 |   0  40  42 101  99
-  4 |   0  53  37 105  97
+  0 |   0   0   0   0   0
+  1 |   0  81  55  72 100
+  2 |   0  65  68  71  89
+  3 |   0  51  43  81 127
+  4 |   0  57  46  74 117
 
 Listas real/predicción: 1197/1197
-Precisión: 29.91%
+Precisión: 28.99%
 
 
 
 *************************************************
 
-Inicio de entrenamiento: 22/5/2022 14:37:46
+Inicio de entrenamiento: 22/5/2022 14:52:06
 ===========================================
 
 Carga, preprocesamiento de datos y entrenamiento
@@ -121,7 +121,7 @@ Carga, preprocesamiento de datos y entrenamiento
 
 Resultados Test
 ===============
-Correct: 315 | Total: 1197
+Correct: 300 | Total: 1197
 
 > Conteo por label
 Remapeo a label 0 con valores de muestra menores a su Mediana
@@ -132,25 +132,25 @@ Remapeo a label 0 con valores de muestra menores a su Mediana
 4: 961
 Muestras de entrenamiento: 2793
 Muestras de test: 1197
-Precision de test: 26.32 % de acierto
+Precision de test: 25.06 % de acierto
 
 Matriz de confusión
 ===================
     |   0   1   2   3   4
-  0 |   3   7   6  12  22
-  1 |  17  57  64  63  95
-  2 |  20  44  65  58  84
-  3 |   5  51  50  82 103
-  4 |   7  53  55  66 108
+  0 |   1  11   4  11  27
+  1 |  16  73  49  75  78
+  2 |  20  67  71  59  75
+  3 |   6  50  58  60 105
+  4 |   5  61  42  78  95
 
 Listas real/predicción: 1197/1197
-Precisión: 26.32%
+Precisión: 25.06%
 
 
 
 *************************************************
 
-Inicio de entrenamiento: 22/5/2022 14:38:05
+Inicio de entrenamiento: 22/5/2022 14:53:35
 ===========================================
 
 Carga, preprocesamiento de datos y entrenamiento
@@ -158,7 +158,7 @@ Carga, preprocesamiento de datos y entrenamiento
 
 Resultados Test
 ===============
-Correct: 575 | Total: 1197
+Correct: 534 | Total: 1197
 
 > Conteo por label
 Remapeo a label 0 con valores de muestra menores a su Q3
@@ -169,17 +169,17 @@ Remapeo a label 0 con valores de muestra menores a su Q3
 4: 597
 Muestras de entrenamiento: 2793
 Muestras de test: 1197
-Precision de test: 48.04 % de acierto
+Precision de test: 44.61 % de acierto
 
 Matriz de confusión
 ===================
     |   0   1   2   3   4
-  0 | 433   3   5   4   6
-  1 |  75  49  34  19  32
-  2 |  80  38  50  26  30
-  3 |  67  16  31  19  19
-  4 |  71  33  21  12  24
+  0 | 410   4   5   0   7
+  1 |  75  42  33  17  44
+  2 |  64  33  43  37  33
+  3 |  71  28  26  14  35
+  4 |  83  28  21  19  25
 
 Listas real/predicción: 1197/1197
-Precisión: 48.04%
+Precisión: 44.61%
 

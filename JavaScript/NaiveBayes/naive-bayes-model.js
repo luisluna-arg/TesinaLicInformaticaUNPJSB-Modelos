@@ -9,9 +9,9 @@ const CLASS_NAME = "moveType";
 /* //////// */
 
 const ExportBasePath = './data/';
-const DataSetExportPath = ExportBasePath + 'naivebayes-data.csv';
-const PreProcessedDataSetExportPath = ExportBasePath + 'naivebayes-preprocessed-data.csv';
-const SettingsExportPath = ExportBasePath + 'naivebayes-settings.json';
+const DataSetExportPath = ExportBasePath + 'trained-model/naivebayes-data.csv';
+const PreProcessedDataSetExportPath = ExportBasePath + 'trained-model/naivebayes-preprocessed-data.csv';
+const SettingsExportPath = ExportBasePath + 'trained-model/naivebayes-settings.json';
 
 let DataLoadingSettings = {
     preProcess: false,
