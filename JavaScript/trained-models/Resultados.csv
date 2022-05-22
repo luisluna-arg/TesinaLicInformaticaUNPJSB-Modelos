@@ -3,8 +3,14 @@ por valores de features menores ;;;
 respecto del dataset en toda la muestra;;;
 ;;;
 Medida;DecisionTree;LinearRegression;NaiveBayes
-Media;46,45;49,62;53,05
-Mediana;27,23;25,06;25,06
-Q1;30,99;20,13;28,99
-Q3;39,68;16,29;52,46
 Desvio estándar;76,61;6,52;77,36
+Media;46,45;49,62;53,05
+Q3;39,68;16,29;52,46
+Q1;30,99;20,13;28,99
+Mediana;27,23;25,06;25,06
+;;;
+Con data augmentation;;;
+30000 por label, 150000 total;;;
+;;;
+Medida;DecisionTree;LinearRegression;NaiveBayes
+Media;51,04;19,38;37,62
