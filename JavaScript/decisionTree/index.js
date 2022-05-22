@@ -61,10 +61,23 @@ const tiposRemapeo = {
     q3: "Q3"
 };
 
-const comparacionRemapeo = {
+const comparacionesRemapeo = {
     menor: "menores",
     mayor: "mayores"
 };
+
+const tipoRemapeo = tiposRemapeo.q3;
+const comparacionRemapeo = comparacionesRemapeo.menor;
+
+let samplesPerLabel = 4000;
+const maxPrecision = 1;
+let precision = 0;
+const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}/`;
+const DataSetExportPath = ExportBasePath + 'decisiontree-data.csv';
+const PreProcessedDataSetExportPath = ExportBasePath + 'decisiontree-preprocessed-data.csv';
+const SettingsExportPath = ExportBasePath + 'decisiontree-settings.json';
+
+MiscUtils.mkdir(ExportBasePath);
 
 function trainModel(loadingSettings) {
     let startTime = new Date();
@@ -116,7 +129,7 @@ function trainModel(loadingSettings) {
     printLogs("Resultados Test", 1);
     printLogs(`Correct: ${correct} | Total: ${testData.samples.length}`, 0);
     printLogs("Conteo por label", 2);
-    printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo.menor} a su ${tiposRemapeo.q3}`, 3);
+    printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo} a su ${tipoRemapeo}`, 3);
     for (let k in Object.keys(dataSetGroup)){
         printLogs(`${k}: ${labelCounts[k]}`, 3);
     }
@@ -209,11 +222,15 @@ function predictWithJson() {
 
 
 /* Comentar esta seccion para no entrenar el modelo */
-let samplesPerLabel = 9000;
-const maxPrecision = 1;
-let precision = 0;
+
 while(precision <= maxPrecision) {
-    precision = trainModel({ dataAugmentationTotal: samplesPerLabel, dataAugmentation: false });
+    precision = trainModel({ 
+        dataAugmentationTotal: samplesPerLabel, 
+        dataAugmentation: true,
+        dataSetExportPath: DataSetExportPath,
+        preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
+        settingsExportPath: SettingsExportPath,
+    });
     samplesPerLabel += 5000;
 }
 
