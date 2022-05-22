@@ -158,6 +158,9 @@ class DecisionTreeModel {
             /* Recibe el JSON para reconstruir */
             this.#rebuildModel(args[0]);
         }
+        else {
+            throw 'Error en parametros de constructor de modelo'
+        }
     }
 
     /* Metodos publicos */

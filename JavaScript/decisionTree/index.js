@@ -78,7 +78,6 @@ function trainModel(loadingSettings) {
     printLogs("Carga, preprocesamiento de datos y entrenamiento", 1);
     const decisionTree = new DecisionTreeModel('./data', loadingSettings);
 
-    /* Test data contiene datos preprocesados */
     let dataSet = decisionTree.getDataSet();
     let dataSetGroup = _.groupBy(dataSet, (sample) => sample[sample.length - 1]);
 
