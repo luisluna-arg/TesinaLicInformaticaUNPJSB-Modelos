@@ -54,17 +54,28 @@ function printConfusionMatrix(predictionLabels, realLabels) {
 }
 
 const tiposRemapeo = {
-    mean: "media",
-    std: "desvío standard",
+    mean: "Media",
+    std: "Desvío standard",
     q1: "Q1",
     median: "Mediana",
     q3: "Q3"
 };
 
-const comparacionRemapeo = {
+const comparacionesRemapeo = {
     menor: "menores",
     mayor: "mayores"
 };
+
+const tipoRemapeo = tiposRemapeo.q3;
+const comparacionRemapeo = comparacionesRemapeo.menor;
+
+let samplesPerLabel = 4000;
+const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}/`;
+const DataSetExportPath = ExportBasePath + 'naivebayes-data.csv';
+const PreProcessedDataSetExportPath = ExportBasePath + 'naivebayes-preprocessed-data.csv';
+const SettingsExportPath = ExportBasePath + 'naivebayes-settings.json';
+
+MiscUtils.mkdir(ExportBasePath);
 
 
 function trainModel(loadingSettings, onComplete) {
@@ -131,7 +142,7 @@ function trainModel(loadingSettings, onComplete) {
             printLogs("Resultados Test", 1);
             printLogs(`Correct: ${counter.correcto} | Total: ${testData.samples.length}`, 0);
             printLogs("Conteo por label", 2);
-            printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo.menor} a su ${tiposRemapeo.q3}`, 3);
+            printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo.menor} a su ${tipoRemapeo}`, 3);
             for (let k in Object.keys(dataSetGroup)){
                 printLogs(`${k}: ${labelCounts[k]}`, 3);
             }
@@ -236,5 +247,10 @@ const jsonTest = function () {
 
 
 
-let samplesPerLabel = 9000;
-trainModel({ dataAugmentationTotal: samplesPerLabel, dataAugmentation: false }, null);
+trainModel({ 
+    dataAugmentationTotal: samplesPerLabel, 
+    dataAugmentation: true,
+    dataSetExportPath: DataSetExportPath,
+    preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
+    settingsExportPath: SettingsExportPath,
+}, null);
