@@ -108,14 +108,19 @@ function dataAugmentation(samples, settings) {
     // Here we generate 5 synthetic data points to bolster our training data with an balance an imbalanced data set.
     const byLabel = _.groupBy(samples, (item) => item[item.length - 1]);
 
+    let maxSamplesCount = Object.keys(byLabel).map(k => byLabel[k].length).reduce((a, b) => Math.max(a, b));
+    maxSamplesCount = Math.max(settings.dataAugmentationTotal, maxSamplesCount);
+    let counter = 0;
+    while(counter < maxSamplesCount) {
+        counter += 500;
+    }
+    maxSamplesCount = counter;
+
     for (const label in byLabel) {
         let labelGroup = byLabel[label].map(sample => sample.slice(0, sample.length - 1));
-        const countToGenerate = settings.dataAugmentationTotal - labelGroup.length;
+        const countToGenerate = maxSamplesCount - labelGroup.length;
 
-        if (countToGenerate <= 0) {
-            samples = labelGroup.map(o => [...o, parseInt(label)]);
-        }
-        else {
+        if (countToGenerate > 0) {
             // Pass in your real data vectors.
             const smote = new SMOTE(labelGroup);
 

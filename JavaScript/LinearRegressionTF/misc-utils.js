@@ -98,6 +98,13 @@ const writeTextFileSubHeader = function (filePath, subheader) {
     writeTextFile(filePath, "> " + subheader);
 }
 
+const mkdir = function (dirPath) {
+    let fs = require('fs');
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath);
+    }
+}
+
 /* /////////////////////////////////////////////////////////////////// */
 
 module.exports = {
@@ -112,5 +119,6 @@ module.exports = {
     writeJSON,
     writeTextFile,
     writeTextFileHeader,
-    writeTextFileSubHeader
+    writeTextFileSubHeader,
+    mkdir
 };

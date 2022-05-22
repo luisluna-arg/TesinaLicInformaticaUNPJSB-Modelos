@@ -54,17 +54,30 @@ function printConfusionMatrix(predictionLabels, realLabels) {
 }
 
 const tiposRemapeo = {
-    mean: "media",
-    std: "desvío standard",
+    mean: "Media",
+    std: "DesvíoStandard",
     q1: "Q1",
     median: "Mediana",
     q3: "Q3"
 };
 
-const comparacionRemapeo = {
+const comparacionesRemapeo = {
     menor: "menores",
     mayor: "mayores"
 };
+
+const tipoRemapeo = tiposRemapeo.q3;
+const comparacionRemapeo = comparacionesRemapeo.menor;
+
+let samplesPerLabel = 4000;
+const maxPrecision = 1;
+let precision = 0;
+const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}/`;
+const DataSetExportPath = ExportBasePath + 'linear-regression-data.csv';
+const PreProcessedDataSetExportPath = ExportBasePath + 'linear-regression-preprocessed-data.csv';
+const SettingsExportPath = ExportBasePath + 'linear-regression-settings.json';
+
+MiscUtils.mkdir(ExportBasePath);
 
 function trainModel(loadingSettings) {
     let startTime = new Date();
@@ -114,10 +127,13 @@ function trainModel(loadingSettings) {
         correct += prediction == realLabel ? 1 : 0;
     }
 
+    let precision = correct / testDataCount;
+    linearRegression.setTestAccuracy(precision);
+
     printLogs("Resultados Test", 1);
     printLogs(`Correct: ${correct} | Total: ${testData.samples.length}`, 0);
     printLogs("Conteo por label", 2);
-    printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo.menor} a su ${tiposRemapeo.q3}`, 3);
+    printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo} a su ${tipoRemapeo}`, 3);
     for (let k in Object.keys(dataSetGroup)){
         printLogs(`${k}: ${labelCounts[k]}`, 3);
     }
@@ -132,7 +148,7 @@ function trainModel(loadingSettings) {
 
     printLogs(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`, 0);
 
-    return correct / testDataCount * 100;
+    return linearRegression.getTestAccuracy() * 100;
 }
 
 function predictWithJson() {
@@ -162,7 +178,7 @@ function predictWithJson() {
     /* Este remapeo tiene que coincidir con el remapeo de data pre processing */
     function remapLower(sample, featureNames, featureMoments) {
         const featValues = sample.slice(0, featureNames.length);
-        const doRemap = featValues.filter((feat, i) => feat > featureMoments[i].q3).length > 0;
+        const doRemap = featValues.filter((feat, i) => feat > featureMoments[i].std).length > 0;
         return [...featValues, doRemap ? 0 : sample[featureNames.length]];
     }
 
@@ -210,11 +226,14 @@ function predictWithJson() {
 
 
 /* Comentar esta seccion para no entrenar el modelo */
-let samplesPerLabel = 9000;
-const maxPrecision = 1;
-let precision = 0;
 while(precision <= maxPrecision) {
-    precision = trainModel({ dataAugmentationTotal: samplesPerLabel, dataAugmentation: false });
+    precision = trainModel({ 
+        dataAugmentationTotal: samplesPerLabel, 
+        dataAugmentation: true,
+        dataSetExportPath: DataSetExportPath,
+        preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
+        settingsExportPath: SettingsExportPath,
+    });
     samplesPerLabel += 5000;
 }
 

@@ -193,6 +193,10 @@ class LinearRegressionModel {
     getTestData() {
         return this.#testData;
     }
+    
+    getTestAccuracy() {
+        return this.#testAccuracy;
+    }
 
     setTestAccuracy(accuracy) {
         this.#testAccuracy = accuracy;
