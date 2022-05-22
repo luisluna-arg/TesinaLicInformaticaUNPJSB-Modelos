@@ -6,7 +6,7 @@ const tf = require('@tensorflow/tfjs-node');
 /* SETTINGS */
 /* //////// */
 
-const ExportBasePath = './data/';
+const ExportBasePath = './data/trained-model/';
 const DataSetExportPath = ExportBasePath + 'linear-regression-data.csv';
 const PreProcessedDataSetExportPath = ExportBasePath + 'linear-regression-preprocessed-data.csv';
 const SettingsExportPath = ExportBasePath + 'linear-regression-settings.json';
@@ -203,7 +203,7 @@ class LinearRegressionModel {
     }
 
     toJSON() {
-        this.#classifier.save('file://./data/linearRegressionModel');
+        this.#classifier.save(`file://${ExportBasePath}`);
         /* TODO Ver como hacer que cargue el JSON */
         return {
             // modelRebuildSettings: this.#classifier.save(),
