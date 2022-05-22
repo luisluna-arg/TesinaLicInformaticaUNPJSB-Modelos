@@ -112,23 +112,23 @@ function dataAugmentation(samples, settings) {
         let labelGroup = byLabel[label].map(sample => sample.slice(0, sample.length - 1));
         const countToGenerate = settings.dataAugmentationTotal - labelGroup.length;
 
-        if (countToGenerate <= 0) return labelGroup;
+        if (countToGenerate <= 0) {
+            samples = labelGroup.map(o => [...o, parseInt(label)]);
+        }
+        else {
+            // Pass in your real data vectors.
+            const smote = new SMOTE(labelGroup);
 
-        // Pass in your real data vectors.
-        const smote = new SMOTE(labelGroup);
+            let newVectors;
 
-        let newVectors;
+            tf.tidy(() => {
+                newVectors = smote.generate(countToGenerate).
+                    map(vector => [...vector, parseInt(label)]
+                    );
+            });
 
-        tf.tidy(() => {
-            newVectors = smote.generate(countToGenerate).
-                map(vector => {
-                    /* Tipo movimiento */
-                    vector.push(parseInt(label));
-                    return vector;
-                });
-        });
-
-        samples = samples.concat(newVectors);
+            samples = samples.concat(newVectors);
+        }
     }
     return samples;
 }
@@ -271,7 +271,7 @@ function remapLower(samples, featureNames) {
 
         result = samples.map((sample, i) => {
             const featValues = sample.slice(0, featureNames.length);
-            const doRemap = featValues.filter((feat, i) => feat > featureMoments[i].q3).length > 0;
+            const doRemap = featValues.filter((feat, i) => feat < featureMoments[i].q3).length == featValues.length;
             let result = [...featValues, doRemap ? 0 : sample[sample.length - 1]];
             return result;
         });
@@ -281,33 +281,6 @@ function remapLower(samples, featureNames) {
         data: result,
         featureStats: featureMoments
     };
-}
-
-function removeLower(samples, featureNames) {
-    let result = samples;
-    tf.tidy(() => {
-        let featureMoments = featureNames.map((f, i) => {
-            let values = samples.map(s => s[i]);
-            let orderedValues = _.orderBy(values);
-
-            const { mean, variance } = tf.moments(tf.tensor(values));
-            return {
-                mean: mean.arraySync(),
-                std: tf.sqrt(variance).arraySync(),
-                min: _.min(values),
-                max: _.max(values),
-                median: orderedValues[Math.floor(orderedValues.length / 2)],
-                q1: orderedValues[Math.floor(orderedValues.length / 4)],
-                q3: orderedValues[Math.floor(orderedValues.length / 4 * 3)],
-            }
-        });
-
-
-        result = samples.filter(o => {
-            return o.slice(0, featureNames.length).filter((f, i) => f > featureMoments[i].median).length > 0
-        });
-    });
-    return result;
 }
 
 /**
@@ -416,7 +389,7 @@ function refactorSample(sample, preProcessData) {
 
 function confusionMatrix(predictionLabels, realLabels) {
     let result = null;
-    
+
     let out;
     let distinctValues = [...new Set([...predictionLabels, ...realLabels])];
     if (distinctValues.length === 1) {

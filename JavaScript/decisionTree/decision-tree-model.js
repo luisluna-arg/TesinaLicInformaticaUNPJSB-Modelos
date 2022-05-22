@@ -13,7 +13,7 @@ const DataSetExportPath = ExportBasePath + 'decisiontree-data.csv';
 const PreProcessedDataSetExportPath = ExportBasePath + 'decisiontree-preprocessed-data.csv';
 const SettingsExportPath = ExportBasePath + 'decisiontree-settings.json';
 
-const DataLoadingSettings = {
+let DataLoadingSettings = {
     preProcess: false,
     classRemap: true, /* Determina si se remapea una clase segun un criterio de limpieza de ruido */
     shuffle: true,
@@ -27,7 +27,7 @@ const DataLoadingSettings = {
     preProcessedDataSetExportPath: PreProcessedDataSetExportPath,
     settingsExportPath: SettingsExportPath,
     minTolerance: 0.0, /* entre 0 y 1, 0 para que traiga todo */
-    dataAugmentationTotal: 175000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
+    dataAugmentationTotal: 5000, /* Muestras totales cada vez que un un archivo o lista de archivos es aumentado */
     dataAugmentation: true
 };
 
@@ -36,7 +36,11 @@ const ModelTrainingSettings = {
     verbose: false
 };
 
-function loadData(fileBasePath) {
+function loadData(fileBasePath, loadingSettings) {
+    if (loadingSettings != null) {
+        DataLoadingSettings = Object.assign({}, DataLoadingSettings, loadingSettings);
+    }
+
     fileBasePath = !MiscUtils.isNullOrUndef(fileBasePath) ? fileBasePath : './data';
     let loadedData = null;
 
@@ -136,10 +140,13 @@ class DecisionTreeModel {
     #trainingData = {};
     #options = {};
 
-    constructor(arg) {
-        if (typeof arg == 'string') {
+    constructor(...args) {
+        if (args.length > 1 && typeof args[0] == 'string') {
             /* Recibe el path de archivos de entrenamiento */
-            let { training, test, featureNames, preProcess, dataSet, preProcessedDataSet } = loadData(arg);
+            let filePath = args[0];
+            let loadingSettings = args.length == 2 ? args[1] : null;
+
+            let { training, test, featureNames, preProcess, dataSet, preProcessedDataSet } = loadData(filePath, loadingSettings);
 
             this.#testData = test;
             this.#preProcess = preProcess;
@@ -147,9 +154,9 @@ class DecisionTreeModel {
             this.#preProcessedDataSet = preProcessedDataSet;
             this.#createModel(training.samples, training.labels, featureNames, ModelTrainingSettings);
         }
-        else {
+        else if (args.length == 1) {
             /* Recibe el JSON para reconstruir */
-            this.#rebuildModel(arg);
+            this.#rebuildModel(args[0]);
         }
     }
 
@@ -163,7 +170,7 @@ class DecisionTreeModel {
     }
 
     predict(predictionSample) {
-        let resampled = predictionSample;
+        let resample = predictionSample;
 
         let refactorSettings = Object.assign({}, this.#preProcess);
         refactorSettings.trainingSettings = Object.assign(
@@ -177,10 +184,11 @@ class DecisionTreeModel {
         );
 
         /* Toda muestra ajena al dataset original debe replantearse */
-        resampled = refactorSample(resampled, refactorSettings);
+        resample = refactorSample(resample, refactorSettings);
 
-        let predicted = this.#decisionTree.predict(new Sample(resampled, this.#featureNames));
-        return typeof predicted == 'string' ? parseInt(predicted) : predicted;
+        let predicted = this.#decisionTree.predict(new Sample(resample, this.#featureNames));
+        let result = typeof predicted == 'string' ? parseInt(predicted) : predicted;
+        return { resample, result };
     }
 
     getFeatureNames() {
@@ -210,12 +218,13 @@ class DecisionTreeModel {
         };
     }
 
-    summary() {
+    summary(logger) {
+        let localLogger = MiscUtils.isNullOrUndef(logger) ? console.log : logger;
         MiscUtils.printHeader("Resultados de modelo")
-        console.log(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
-        console.log(`Muestras de test: ${this.#testData.samples.length}`);
-        console.log(`Precision de entrenamiento: ${MiscUtils.trunc(this.#trainAccuracy * 100, 2)} % de acierto`);
-        console.log(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
+        localLogger(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
+        localLogger(`Muestras de test: ${this.#testData.samples.length}`);
+        localLogger(`Precision de entrenamiento: ${MiscUtils.trunc(this.#trainAccuracy * 100, 2)} % de acierto`);
+        localLogger(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
     }
 
     /**
