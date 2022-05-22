@@ -17,7 +17,7 @@ Remapeo a label 0 con valores de muestra menores a su Q1
 4: 4000
 Muestras de entrenamiento: 14000
 Muestras de test: 6000
-Precision de test: 0 % de acierto
+Precision de test: 18.42% de acierto
 
 Matriz de confusión
 ===================
