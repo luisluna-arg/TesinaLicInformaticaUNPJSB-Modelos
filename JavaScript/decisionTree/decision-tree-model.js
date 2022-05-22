@@ -8,7 +8,7 @@ const CLASS_NAME = "moveType";
 /* SETTINGS */
 /* //////// */
 
-const ExportBasePath = './data/';
+const ExportBasePath = './data/trained-model';
 const DataSetExportPath = ExportBasePath + 'decisiontree-data.csv';
 const PreProcessedDataSetExportPath = ExportBasePath + 'decisiontree-preprocessed-data.csv';
 const SettingsExportPath = ExportBasePath + 'decisiontree-settings.json';
