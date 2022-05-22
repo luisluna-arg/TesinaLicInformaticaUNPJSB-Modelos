@@ -9,7 +9,7 @@ Resultados Test
 Correct: 2559 | Total: 6000
 
 > Conteo por label
-Remapeo a label 0 con valores de muestra menores a su desvío standard
+Remapeo a label 0 con valores de muestra undefined a su desvío standard
 0: 4000
 1: 4000
 2: 4000

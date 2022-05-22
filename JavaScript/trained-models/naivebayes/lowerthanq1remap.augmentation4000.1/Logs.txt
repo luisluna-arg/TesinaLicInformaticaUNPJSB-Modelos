@@ -9,7 +9,7 @@ Resultados Test
 Correct: 2670 | Total: 6000
 
 > Conteo por label
-Remapeo a label 0 con valores de muestra menores a su Q1
+Remapeo a label 0 con valores de muestra undefined a su Q1
 0: 4000
 1: 4000
 2: 4000

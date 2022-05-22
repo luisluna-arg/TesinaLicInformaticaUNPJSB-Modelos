@@ -9,7 +9,7 @@ Resultados Test
 Correct: 2193 | Total: 6000
 
 > Conteo por label
-Remapeo a label 0 con valores de muestra menores a su media
+Remapeo a label 0 con valores de muestra undefined a su media
 0: 4000
 1: 4000
 2: 4000
