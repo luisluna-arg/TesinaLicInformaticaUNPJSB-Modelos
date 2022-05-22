@@ -203,9 +203,10 @@ class LinearRegressionModel {
     }
 
     toJSON() {
-        this.#classifier.save('file://./model-1a');
+        this.#classifier.save('file://./data/linearRegressionModel');
+        /* TODO Ver como hacer que cargue el JSON */
         return {
-            modelRebuildSettings: this.#classifier.save(),
+            // modelRebuildSettings: this.#classifier.save(),
             trainAccuracy: this.#trainAccuracy,
             testAccuracy: this.#testAccuracy,
             preProcess: this.#preProcess,
@@ -214,12 +215,15 @@ class LinearRegressionModel {
         };
     }
 
-    summary() {
+    summary(logger, printModelSummary) {
+        let localLogger = MiscUtils.isNullOrUndef(logger) ? console.log : logger;
         MiscUtils.printHeader("Resultados de modelo")
-        console.log(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
-        console.log(`Muestras de test: ${this.#testData.samples.length}`);
-        console.log(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
-        this.#classifier.summary();
+        localLogger(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
+        localLogger(`Muestras de test: ${this.#testData.samples.length}`);
+        localLogger(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
+        if (printModelSummary){
+            this.#classifier.summary();
+        }
     }
 
     /**

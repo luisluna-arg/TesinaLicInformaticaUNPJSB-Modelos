@@ -1,6 +1,5 @@
 let tf = require('@tensorflow/tfjs-node');
 let dfd = require("danfojs-node");
-const { forEach } = require('lodash');
 const _ = require('lodash');
 const SMOTE = require('smote');
 const MiscUtils = require('./misc-utils');
@@ -109,7 +108,7 @@ function dataAugmentation(samples, settings) {
     // Here we generate 5 synthetic data points to bolster our training data with an balance an imbalanced data set.
     const byLabel = _.groupBy(samples, (item) => item[item.length - 1]);
 
-    for (let label in byLabel) {
+    for (const label in byLabel) {
         let labelGroup = byLabel[label].map(sample => sample.slice(0, sample.length - 1));
         const countToGenerate = settings.dataAugmentationTotal - labelGroup.length;
 
@@ -272,7 +271,7 @@ function remapLower(samples, featureNames) {
 
         result = samples.map((sample, i) => {
             const featValues = sample.slice(0, featureNames.length);
-            const doRemap = featValues.filter((feat, i) => feat > featureMoments[i].median).length > 0;
+            const doRemap = featValues.filter((feat, i) => feat < featureMoments[i].q3).length == featValues.length;
             let result = [...featValues, doRemap ? 0 : sample[sample.length - 1]];
             return result;
         });
@@ -282,33 +281,6 @@ function remapLower(samples, featureNames) {
         data: result,
         featureStats: featureMoments
     };
-}
-
-function removeLower(samples, featureNames) {
-    let result = samples;
-    tf.tidy(() => {
-        let featureMoments = featureNames.map((f, i) => {
-            let values = samples.map(s => s[i]);
-            let orderedValues = _.orderBy(values);
-
-            const { mean, variance } = tf.moments(tf.tensor(values));
-            return {
-                mean: mean.arraySync(),
-                std: tf.sqrt(variance).arraySync(),
-                min: _.min(values),
-                max: _.max(values),
-                median: orderedValues[Math.floor(orderedValues.length / 2)],
-                q1: orderedValues[Math.floor(orderedValues.length / 4)],
-                q3: orderedValues[Math.floor(orderedValues.length / 4 * 3)],
-            }
-        });
-
-
-        result = samples.filter(o => {
-            return o.slice(0, featureNames.length).filter((f, i) => f > featureMoments[i].median).length > 0
-        });
-    });
-    return result;
 }
 
 /**

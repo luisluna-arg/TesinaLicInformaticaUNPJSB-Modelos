@@ -53,6 +53,19 @@ function printConfusionMatrix(predictionLabels, realLabels) {
     printLogs(``);
 }
 
+const tiposRemapeo = {
+    mean: "media",
+    std: "desvío standard",
+    q1: "Q1",
+    median: "Mediana",
+    q3: "Q3"
+};
+
+const comparacionRemapeo = {
+    menor: "menores",
+    mayor: "mayores"
+};
+
 function trainModel(loadingSettings) {
     let startTime = new Date();
 
@@ -63,39 +76,59 @@ function trainModel(loadingSettings) {
     printLogs(`Inicio de entrenamiento: ${startTime.toLocaleString()}`, 1);
 
     printLogs("Carga, preprocesamiento de datos y entrenamiento", 1);
-    const linearRegressionModel = new LinearRegressionModel('./data', loadingSettings);
+    const linearRegression = new LinearRegressionModel('./data', loadingSettings);
 
     /* Test data contiene datos preprocesados */
-    const testData = linearRegressionModel.getTestData();
-    let testDataSamples = testData.samples.filter((s, i) => testData.labels[i] > 0);
-    let testDataLabels = testData.labels.filter((s, i) => testData.labels[i] > 0);
+    let dataSet = linearRegression.getDataSet();
+    let dataSetGroup = _.groupBy(dataSet, (sample) => sample[sample.length - 1]);
+
+    /* Test data contiene datos preprocesados */
+    const testData = linearRegression.getTestData();
+    const trainingData = linearRegression.getTrainingData();
+    let totalData = 
+        testData.samples.map((o, i) => [...o, testData.labels[i]]).
+        concat(trainingData.samples.map((o, i) => [...o, trainingData.labels[i]]));
+    dataSetGroup = _.groupBy(totalData, (sample) => sample[sample.length - 1]);
+
+    let labelCounts = {};
+    let total = 0;
+    for (let k in Object.keys(dataSetGroup)){
+        labelCounts[k] = dataSetGroup[k].length;
+        total += labelCounts[k];
+    }
+    labelCounts["total"] = total;
 
     /* TEST - El modelo se prueba con datos preprocesados */
     /* ////////////////////////////////////////////////// */
     let correct = 0;
     let predictionLabels = [];
     let realLabels = [];
-    let testDataCount = testDataSamples.length; // 30;
+    let testDataCount = testData.samples.length; // 30;
 
     for (let i = 0; i < testDataCount; i++) {
-        const sample = testDataSamples[i];
-        const prediction = linearRegressionModel.predictPreProcessed(sample);
-        const realLabel = testDataLabels[i];
+        const sample = testData.samples[i];
+        const prediction = linearRegression.predictPreProcessed(sample);
+        const realLabel = testData.labels[i];
         predictionLabels.push(prediction);
         realLabels.push(realLabel);
         correct += prediction == realLabel ? 1 : 0;
     }
 
     printLogs("Resultados Test", 1);
-    printLogs(`Correct: ${correct} | Total: ${testDataSamples.length}`, 0);
+    printLogs(`Correct: ${correct} | Total: ${testData.samples.length}`, 0);
+    printLogs("Conteo por label", 2);
+    printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo.menor} a su ${tiposRemapeo.q3}`, 3);
+    for (let k in Object.keys(dataSetGroup)){
+        printLogs(`${k}: ${labelCounts[k]}`, 3);
+    }
 
-    linearRegressionModel.summary(printLogs);
+    linearRegression.summary(printLogs, false);
 
     printConfusionMatrix(predictionLabels, realLabels);
-
-    linearRegressionModel.exportDataSet();
-    linearRegressionModel.exportPreProcessDataSet();
-    linearRegressionModel.exportSettings();
+   
+    linearRegression.exportDataSet();
+    linearRegression.exportPreProcessDataSet();
+    linearRegression.exportSettings();
 
     printLogs(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`, 0);
 
@@ -126,6 +159,7 @@ function predictWithJson() {
         'highGamma',
     ];
 
+    /* Este remapeo tiene que coincidir con el remapeo de data pre processing */
     function remapLower(sample, featureNames, featureMoments) {
         const featValues = sample.slice(0, featureNames.length);
         const doRemap = featValues.filter((feat, i) => feat > featureMoments[i].q3).length > 0;
@@ -176,11 +210,11 @@ function predictWithJson() {
 
 
 /* Comentar esta seccion para no entrenar el modelo */
-let samplesPerLabel = 2000;
-const maxPrecision = 85;
+let samplesPerLabel = 9000;
+const maxPrecision = 1;
 let precision = 0;
 while(precision <= maxPrecision) {
-    precision = trainModel({ dataAugmentationTotal: samplesPerLabel, dataAugmentation: true });
+    precision = trainModel({ dataAugmentationTotal: samplesPerLabel, dataAugmentation: false });
     samplesPerLabel += 5000;
 }
 
