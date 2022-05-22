@@ -10,7 +10,11 @@ Q1;30,99;20,13;28,99
 Mediana;27,23;25,06;25,06
 ;;;
 Con data augmentation;;;
-30000 por label, 150000 total;;;
+4000 por label, 20000 total;;;
 ;;;
 Medida;DecisionTree;LinearRegression;NaiveBayes
-Media;51,04;19,38;37,62
+Desvio estándar;41,07;14,03;42,65
+Media;35,67;17,55;36,55
+Q3;38,28;27,28;36,38
+Q1;48,33;18,42;44,5
+Mediana;45;21,22;38,6
