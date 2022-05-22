@@ -13,7 +13,7 @@ const DataSetExportPath = ExportBasePath + 'naivebayes-data.csv';
 const PreProcessedDataSetExportPath = ExportBasePath + 'naivebayes-preprocessed-data.csv';
 const SettingsExportPath = ExportBasePath + 'naivebayes-settings.json';
 
-const DataLoadingSettings = {
+let DataLoadingSettings = {
     preProcess: false,
     classRemap: true,
     shuffle: true,
@@ -36,7 +36,11 @@ const ModelTrainingSettings = {
     verbose: false
 };
 
-function loadData(fileBasePath) {
+function loadData(fileBasePath, loadingSettings) {
+    if (loadingSettings != null) {
+        DataLoadingSettings = Object.assign({}, DataLoadingSettings, loadingSettings);
+    }
+
     fileBasePath = !MiscUtils.isNullOrUndef(fileBasePath) ? fileBasePath : './data';
     let loadedData = null;
 
@@ -138,10 +142,14 @@ class NaiveBayesModel {
     #trainingPromise = null;
     #preProcessedDataSet = {};
 
-    constructor(arg) {
-        if (typeof arg == 'string') {
+    constructor(...args) {
+        if (args.length > 1 && typeof args[0] == 'string') {
             /* Recibe el path de archivos de entrenamiento */
-            let { training, test, featureNames, preProcess, dataSet, preProcessedDataSet } = loadData(arg);
+            let filePath = args[0];
+            let loadingSettings = args.length == 2 ? args[1] : null;
+
+            /* Recibe el path de archivos de entrenamiento */
+            let { training, test, featureNames, preProcess, dataSet, preProcessedDataSet } = loadData(filePath, loadingSettings);
 
             this.#testData = test;
             this.#preProcess = preProcess;
@@ -149,9 +157,12 @@ class NaiveBayesModel {
             this.#preProcessedDataSet = preProcessedDataSet;
             this.#createModel(training.samples, training.labels, featureNames, ModelTrainingSettings);
         }
-        else {
+        else if (args.length == 1) {
             /* Recibe el JSON para reconstruir */
-            this.#rebuildModel(arg);
+            this.#rebuildModel(args[0]);
+        }
+        else {
+            throw 'Error en parametros de constructor de modelo'
         }
     }
 
@@ -217,11 +228,12 @@ class NaiveBayesModel {
         };
     }
 
-    summary() {
+    summary(logger) {
+        let localLogger = MiscUtils.isNullOrUndef(logger) ? console.log : logger;
         MiscUtils.printHeader("Resultados de modelo")
-        console.log(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
-        console.log(`Muestras de test: ${this.#testData.samples.length}`);
-        console.log(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
+        localLogger(`Muestras de entrenamiento: ${this.#trainingData.samples.length}`);
+        localLogger(`Muestras de test: ${this.#testData.samples.length}`);
+        localLogger(`Precision de test: ${MiscUtils.trunc(this.#testAccuracy * 100, 2)} % de acierto`);
     }
 
     /**

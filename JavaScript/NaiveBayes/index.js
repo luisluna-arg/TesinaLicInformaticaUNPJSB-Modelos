@@ -7,44 +7,155 @@ const { sampleNormalization } = require('./data-preprocessing');
 /* ////////////////////////////////////////////////// */
 /* ////////////////////////////////////////////////// */
 
+const logFilePath = './Logs.txt';
+
 const blankPad = (num, places) => String(num).padStart(places, ' ');
+
+const printLogs = (logLine, logType) => {
+    switch (logType) {
+        case 1:
+            {
+                MiscUtils.printHeader(logLine);
+                MiscUtils.writeTextFileHeader(logFilePath, logLine);
+                break;
+            }
+        case 2: {
+            MiscUtils.printSubHeader(logLine);
+            MiscUtils.writeTextFileSubHeader(logFilePath, logLine);
+            break;
+        }
+        default: {
+            console.log(logLine);
+            MiscUtils.writeTextFile(logFilePath, logLine);
+            break;
+        }
+    }
+};
 
 function printConfusionMatrix(predictionLabels, realLabels) {
     let confMat = { matrix: null };
-    MiscUtils.printHeader("Matriz de confusión");
+    printLogs("Matriz de confusión", 1);
     confMat = confusionMatrix(predictionLabels, realLabels);
 
     let zeroPadCount = _.max(_.flatten(confMat.matrix).filter(o => !isNaN(o))).toString().length;
 
     for (let i = 0; i < confMat.matrix.length; i++) {
-        console.log(confMat.matrix[i].
+        printLogs(confMat.matrix[i].
             map((m, j) => {
                 if (m == '|') return m;
                 if (i == 0 && j == 0) return new Array(zeroPadCount + 1).join(' ');
                 return blankPad(m, zeroPadCount)
             }).join(' '));
     }
-    console.log(``);
-    console.log(`Listas real/predicción: ${confMat.realLabelCount}/${confMat.predictionCount}`);
-    console.log(`Precisión: ${MiscUtils.trunc(confMat.precision * 100, 2)}%`);
-    console.log(``);
+    printLogs(``);
+    printLogs(`Listas real/predicción: ${confMat.realLabelCount}/${confMat.predictionCount}`);
+    printLogs(`Precisión: ${MiscUtils.trunc(confMat.precision * 100, 2)}%`);
+    printLogs(``);
 }
 
-// MiscUtils.printHeader("Carga, preprocesamiento de datos y entrenamiento");
+const tiposRemapeo = {
+    mean: "media",
+    std: "desvío standard",
+    q1: "Q1",
+    median: "Mediana",
+    q3: "Q3"
+};
 
-// let startTime = new Date();
-// console.log(`Inicio: ${startTime.toLocaleString()}`);
+const comparacionRemapeo = {
+    menor: "menores",
+    mayor: "mayores"
+};
 
-// const naiveBayes = new NaiveBayesModel('./data');
 
-// /* Test data contiene datos preprocesados */
-// const testData = naiveBayes.getTestData();
-// const dataSet = naiveBayes.getDataSet();
+function trainModel(loadingSettings, onComplete) {
+    let startTime = new Date();
 
-// const testDataSet = _.shuffle(dataSet).slice((dataSet.length * 0.7));
+    printLogs(``);
+    printLogs(``);
+    printLogs(`*************************************************`);
 
-/* TEST - El modelo se prueba con datos preprocesados */
-/* ////////////////////////////////////////////////// */
+    printLogs(`Inicio de entrenamiento: ${startTime.toLocaleString()}`, 1);
+
+    printLogs("Carga, preprocesamiento de datos y entrenamiento", 1);
+    const naiveBayes = new NaiveBayesModel('./data', loadingSettings);
+
+    let dataSet = naiveBayes.getDataSet();
+    let dataSetGroup = _.groupBy(dataSet, (sample) => sample[sample.length - 1]);
+
+    /* Test data contiene datos preprocesados */
+    const testData = naiveBayes.getTestData();
+    const trainingData = naiveBayes.getTrainingData();
+    let totalData = testData.samples.map((o, i) => [...o, testData.labels[i]]).
+        concat(trainingData.samples.map((o, i) => [...o, trainingData.labels[i]]));
+    dataSetGroup = _.groupBy(totalData, (sample) => sample[sample.length - 1]);
+
+    let labelCounts = {};
+    let total = 0;
+    for (let k in Object.keys(dataSetGroup)) {
+        labelCounts[k] = dataSetGroup[k].length;
+        total += labelCounts[k];
+    }
+    labelCounts["total"] = total;
+
+    /* TEST - El modelo se prueba con datos preprocesados */
+    /* ////////////////////////////////////////////////// */
+    naiveBayes.whenTrained(() => {
+        let results = [];
+        for (let i = 0; i < testData.samples.length; i++) {
+            const sample = testData.samples[i];
+            // console.log("sample", sample);
+            const label = testData.labels[i];
+            const prediction = naiveBayes.predictPreProcessed(sample);
+            results.push([label, prediction]);
+        }
+
+        let counter = { correcto: 0, total: testData.samples.length }
+        let predictionLabels = [];
+        let realLabels = [];
+        for (let i = 0; i < results.length; i++) {
+            results[i][1].then((resolution) => {
+                const realLabel = results[i][0];
+                const predicted = parseInt(resolution);
+
+                realLabels.push(realLabel);
+                predictionLabels.push(predicted);
+
+                counter.correcto += (realLabel == predicted) ? 1 : 0;
+            });
+        }
+
+        Promise.all(results.map(o => o[1])).then(() => {
+            counter.precision = counter.correcto / counter.total;
+            naiveBayes.setTestAccuracy(counter.precision);
+            
+            printLogs("Resultados Test", 1);
+            printLogs(`Correct: ${counter.correcto} | Total: ${testData.samples.length}`, 0);
+            printLogs("Conteo por label", 2);
+            printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo.menor} a su ${tiposRemapeo.q3}`, 3);
+            for (let k in Object.keys(dataSetGroup)){
+                printLogs(`${k}: ${labelCounts[k]}`, 3);
+            }
+
+            naiveBayes.summary(printLogs);
+
+            printConfusionMatrix(predictionLabels, realLabels);
+
+            naiveBayes.exportDataSet();
+            naiveBayes.exportPreProcessDataSet();
+            naiveBayes.exportSettings();
+
+            console.log(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`);
+            console.log("");
+
+            if (!MiscUtils.isNullOrUndef(onComplete) && typeof onComplete === "function") {
+                onComplete();
+            }
+        });
+
+    });
+
+
+}
 
 const jsonTest = function () {
     /* TEST JSON - El modelo, reconstruido, se prueba con datos no preprocesados */
@@ -123,55 +234,7 @@ const jsonTest = function () {
     });
 }
 
-// naiveBayes.whenTrained(() => {
-//     let correct = 0;
-//     let results = [];
-//     for (let i = 0; i < testData.samples.length; i++) {
-//         const sample = testData.samples[i];
-//         // console.log("sample", sample);
-//         const label = testData.labels[i];
-//         const prediction = naiveBayes.predictPreProcessed(sample);
-//         results.push([label, prediction]);
-//     }
-
-//     let counter = { correcto: 0, total: testData.samples.length }
-//     let predictionLabels = [];
-//     let realLabels = [];
-//     for (let i = 0; i < results.length; i++) {
-//         results[i][1].then((resolution) => {
-//             const realLabel = results[i][0];
-//             const predicted = parseInt(resolution);
-
-//             realLabels.push(realLabel);
-//             predictionLabels.push(predicted);
-
-//             counter.correcto += (realLabel == predicted) ? 1 : 0;
-//         });
-//     }
-
-//     Promise.all(results.map(o => o[1])).then(() => {
-//         counter.precision = counter.correcto / counter.total;
-//         naiveBayes.setTestAccuracy(counter.precision);
-//         console.log(`Precision ${counter.precision}%`);
-//         MiscUtils.printHeader("Resultados Test");
-//         console.log(`Correct: ${counter.correcto} | Total: ${counter.total} | Precisión: ${counter.precision}`);
-//         naiveBayes.summary();
-
-//         printConfusionMatrix(predictionLabels, realLabels);
-
-//         naiveBayes.exportDataSet();
-//         naiveBayes.exportPreProcessDataSet();
-//         naiveBayes.exportSettings();
-
-//         console.log(`Inicio: ${startTime.toLocaleString()} | Fin: ${new Date().toLocaleString()}`);
-//         console.log("");
-
-//         jsonTest();
-//     });
-
-// });
 
 
-jsonTest();
-
-
+let samplesPerLabel = 9000;
+trainModel({ dataAugmentationTotal: samplesPerLabel, dataAugmentation: false }, null);

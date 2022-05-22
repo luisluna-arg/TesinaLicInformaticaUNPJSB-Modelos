@@ -37,9 +37,9 @@ function readDataSetCSV(filePath) {
         let fileData = fs.readFileSync(filePath, { encoding: 'utf-8' });
         let result = fileData.split(';').
             map(l => l.split(',').
-            map(v => (v.indexOf('.') >= 0) ? parseFloat(v) : parseInt(v)));
+                map(v => (v.indexOf('.') >= 0) ? parseFloat(v) : parseInt(v)));
 
-        
+
         return result;
     }
     else {
@@ -78,6 +78,26 @@ function writeJSON(filePath, jsonData) {
     fs.writeFileSync(filePath, JSON.stringify(jsonData), { encoding: 'utf-8' });
 }
 
+function writeTextFile(filePath, text) {
+    var fs = require("fs");
+    if (fs.existsSync(filePath) && fs.accessSync(filePath)) {
+        fs.unlink(filePath);
+    }
+
+    fs.appendFileSync(filePath, text.toString() + "\n", { encoding: 'utf-8' });
+}
+
+const writeTextFileHeader = function (filePath, header) {
+    writeTextFile(filePath, "");
+    writeTextFile(filePath, header);
+    writeTextFile(filePath, new Array(header.length).fill("=").join(''));
+}
+
+const writeTextFileSubHeader = function (filePath, subheader) {
+    writeTextFile(filePath, "");
+    writeTextFile(filePath, "> " + subheader);
+}
+
 /* /////////////////////////////////////////////////////////////////// */
 
 module.exports = {
@@ -89,5 +109,8 @@ module.exports = {
     readDataSetCSV,
     writeDataSetCSV,
     readJSON,
-    writeJSON
-}
+    writeJSON,
+    writeTextFile,
+    writeTextFileHeader,
+    writeTextFileSubHeader
+};
