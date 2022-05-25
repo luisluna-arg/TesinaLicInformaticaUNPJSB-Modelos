@@ -1,20 +1,72 @@
-﻿Remapeo de clase a 0 ;;;
-por valores de features menores ;;;
-respecto del dataset en toda la muestra;;;
-;;;
-Medida;DecisionTree;LinearRegression;NaiveBayes
-Desvio estándar;76,61;6,52;77,36
-Media;46,45;49,62;53,05
-Q3;39,68;16,29;52,46
-Q1;30,99;20,13;28,99
-Mediana;27,23;25,06;25,06
-;;;
-Con data augmentation;;;
-4000 por label, 20000 total;;;
-;;;
-Medida;DecisionTree;LinearRegression;NaiveBayes
-Desvio estándar;41,07;14,03;42,65
-Media;35,67;17,55;36,55
-Q3;38,28;27,28;36,38
-Q1;48,33;18,42;44,5
-Mediana;45;21,22;38,6
+﻿Remapeo de clase a 0 ;;;;;;;;;;;
+por valores de features menores ;;;;;;;;;;;
+respecto del dataset en toda la muestra;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;76,61;46,45;30,99;27,23;39,68;;;;;;
+LinearRegression;6,52;49,62;20,13;25,06;16,29;;;;;;
+NaiveBayes;77,36;53,05;28,99;25,06;52,46;;;;;;
+;;;;;;;;;;;
+;;;;;;;;;;;
+;;;;;;;;;;;
+Con data augmentation;;;;;;;;;;;
+4000 por label, 20000 total;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;41,07;35,67;48,33;45;38,28;;Media;Mediana;STD;Q3;Q1
+LinearRegression;14,03;17,55;18,42;21,22;27,28;;Q3;Mediana;Q1;Media;STD
+NaiveBayes;42,65;36,55;44,5;38,6;36,38;;Q1;STD;Mediana;Media;Q3
+;;;;;;;;;;;
+;;;;;;;;;;;
+Con data augmentation;;;;;;;;;;;
+20000 por label, 100000 total;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;49,18;47,33;54,92;53,82;46,19;;Q1;Median;;;
+LinearRegression;8,88;18,81;28,08;17,52;23,38;;;;;;
+NaiveBayes;44,31;37,13;45,43;41,32;38,62;;;;;;
+;;;;;;;;;;;
+;;;;;;;;;;;
+Con data augmentation;;;;;;;;;;;
+30000 por label, 150000 total;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;59,13;51,18;58,5;56,71;50,8;;;;;;
+LinearRegression;15,15;21,27;21,75;21,91;29,8;;;;;;
+NaiveBayes;44,7;37,36;45,53;40,29;38,46;;;;;;
+;;;;;;;;;;;
+;;;;;;;;;;;
+Con data augmentation;;;;;;;;;;;
+50000 por label, 250000 total;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;64,59;56,72;63,38;61,74;56,75;;;;;;
+LinearRegression;20,78;15,38;19,51;19,63;18;;;;;;
+NaiveBayes;44,58;38,09;45,88;40,63;38,36;;;;;;
+;;;;;;;;;;;
+;;;;;;;;;;;
+Con data augmentation;;;;;;;;;;;
+80000 por label, 400000 total;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;70,47;68,53;68,58;67,72;67,62;;;;;;
+LinearRegression;22,28;16,38;19,8;15,38;18,48;;;;;;
+NaiveBayes;44,49;38,73;45,57;40,64;40,73;;;;;;
+;;;;;;;;;;;
+;;;;;;;;;;;
+Con data augmentation;;;;;;;;;;;
+120000 por label, 600000 total;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;75,59;73,59;73,2;72,67;74,16;;;;;;
+LinearRegression;31,43;15,46;24,63;17,43;12,45;;;;;;
+NaiveBayes;44,75;37,69;45,74;40,41;38,53;;;;;;
+;;;;;;;;;;;
+;;;;;;;;;;;
+Con data augmentation;;;;;;;;;;;
+150000 por label, 750000 total;;;;;;;;;;;
+;;;;;;;;;;;
+Modelo;Desvio estándar;Media;Q1;Mediana;Q3;;;;;;
+DecisionTree;78,01;76,82;75,77;75,42;77,15;;;;;;
+LinearRegression;19,41;20,88;19,82;19,05;15,5;;;;;;
+NaiveBayes;44,55;37,61;46,08;40,49;38,71;;;;;;
