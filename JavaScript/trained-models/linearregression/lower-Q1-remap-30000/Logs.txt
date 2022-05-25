@@ -1,0 +1,35 @@
+Inicio de entrenamiento: 23/5/2022 01:36:43
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 9788 | Total: 45000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 30000
+1: 30000
+2: 30000
+3: 30000
+4: 30000
+Muestras de entrenamiento: 105000
+Muestras de test: 45000
+Precision de test: 21.75 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0    0    0    0 8974
+   1 |  173 1105  354   64 7397
+   2 |  148  652  520   31 7678
+   3 |  170  416  185   14 8153
+   4 |   59  475  241   42 8149
+
+Listas real/predicción: 45000/45000
+Precisión: 21.75%
+
+Inicio: 23/5/2022 01:36:43 | Fin: 23/5/2022 01:39:11
+
