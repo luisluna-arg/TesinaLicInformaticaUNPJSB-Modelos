@@ -276,7 +276,7 @@ function remapLower(samples, featureNames) {
 
         result = samples.map((sample, i) => {
             const featValues = sample.slice(0, featureNames.length);
-            const doRemap = featValues.filter((feat, i) => feat < featureMoments[i].q3).length == featValues.length;
+            const doRemap = featValues.filter((feat, i) => feat < featureMoments[i].std).length == featValues.length;
             let result = [...featValues, doRemap ? 0 : sample[sample.length - 1]];
             return result;
         });

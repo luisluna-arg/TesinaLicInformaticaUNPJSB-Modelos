@@ -1,14 +1,27 @@
 /* HELPER FUNCTIONS */
 /* //////////////// */
-const printHeader = function (header) {
+const printHeader = function (header, printTime) {
     console.log("");
-    console.log(header);
-    console.log(new Array(header.length).fill("=").join(''));
+    let text;
+    if (printTime){
+        text = `${header} - ${(new Date()).toLocaleString()}`;
+    }
+    else {
+        text = `${header}`;
+    }
+    console.log(text);
+    console.log(new Array(text.length).fill("=").join(''));
 }
 
-const printSubHeader = function (subheader) {
+const printSubHeader = function (subheader, printTime) {
     console.log("");
-    console.log("> " + subheader);
+
+    if (printTime){
+        console.log(`> ${subheader} - ${(new Date()).toLocaleString()}`);
+    }
+    else {
+        console.log(`> ${subheader}`);
+    }
 }
 
 const isNullOrUndef = function (value) {

@@ -71,7 +71,7 @@ function loadData(fileBasePath, loadingSettings) {
     /* ///////////////////// */
 
     /* Una vez cargados, aplicar preprocesamientos, excepto data augmentation */
-    MiscUtils.printHeader("Preprocesamiento de datos");
+    MiscUtils.printSubHeader("Preprocesamiento de datos", true);
     DataLoadingSettings.preProcess = true;
     const preProcessResult = dataPreProcessing(loadedData, DataLoadingSettings);
     loadedData = preProcessResult.data;
@@ -79,6 +79,8 @@ function loadData(fileBasePath, loadingSettings) {
 
     /* ENTRENAMIENTO */
     /* ///////////// */
+    MiscUtils.printSubHeader("Entrenamiento de modelo", true);
+
     splitData(loadedData);
 
     const samples = loadedData.getSamples();

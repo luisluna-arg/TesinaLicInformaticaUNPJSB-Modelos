@@ -66,13 +66,13 @@ const comparacionesRemapeo = {
     mayor: "mayores"
 };
 
-const tipoRemapeo = tiposRemapeo.q3;
+const tipoRemapeo = tiposRemapeo.std;
 const comparacionRemapeo = comparacionesRemapeo.menor;
 
-let samplesPerLabel = 4000;
+let samplesPerLabel = 150000;
 const maxPrecision = 1;
 let precision = 0;
-const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}/`;
+const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}-${samplesPerLabel}/`;
 const DataSetExportPath = ExportBasePath + 'linear-regression-data.csv';
 const PreProcessedDataSetExportPath = ExportBasePath + 'linear-regression-preprocessed-data.csv';
 const SettingsExportPath = ExportBasePath + 'linear-regression-settings.json';

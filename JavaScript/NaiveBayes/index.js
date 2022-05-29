@@ -69,8 +69,8 @@ const comparacionesRemapeo = {
 const tipoRemapeo = tiposRemapeo.q3;
 const comparacionRemapeo = comparacionesRemapeo.menor;
 
-let samplesPerLabel = 4000;
-const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}/`;
+let samplesPerLabel = 150000;
+const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}-${samplesPerLabel}/`;
 const DataSetExportPath = ExportBasePath + 'naivebayes-data.csv';
 const PreProcessedDataSetExportPath = ExportBasePath + 'naivebayes-preprocessed-data.csv';
 const SettingsExportPath = ExportBasePath + 'naivebayes-settings.json';
@@ -142,7 +142,7 @@ function trainModel(loadingSettings, onComplete) {
             printLogs("Resultados Test", 1);
             printLogs(`Correct: ${counter.correcto} | Total: ${testData.samples.length}`, 0);
             printLogs("Conteo por label", 2);
-            printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo.menor} a su ${tipoRemapeo}`, 3);
+            printLogs(`Remapeo a label 0 con valores de muestra ${comparacionRemapeo} a su ${tipoRemapeo}`, 3);
             for (let k in Object.keys(dataSetGroup)){
                 printLogs(`${k}: ${labelCounts[k]}`, 3);
             }

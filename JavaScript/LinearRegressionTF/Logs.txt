@@ -454,3 +454,1295 @@ Listas real/predicción: 6000/6000
 Precisión: 27.28%
 
 Inicio: 22/5/2022 18:55:30 | Fin: 22/5/2022 18:55:52
+
+
+*************************************************
+
+Inicio de entrenamiento: 22/5/2022 22:54:37
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 5642 | Total: 30000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Media
+0: 20000
+1: 20000
+2: 20000
+3: 20000
+4: 20000
+Muestras de entrenamiento: 70000
+Muestras de test: 30000
+Precision de test: 18.81 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0    0 5993    0    0
+   1 |  124  608 3746 1288  279
+   2 |   80  925 3768  971  279
+   3 |   80  560 4217  919  283
+   4 |   40  583 4206  704  347
+
+Listas real/predicción: 30000/30000
+Precisión: 18.81%
+
+Inicio: 22/5/2022 22:54:37 | Fin: 22/5/2022 22:57:11
+
+
+*************************************************
+
+Inicio de entrenamiento: 22/5/2022 22:59:50
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 2665 | Total: 30000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su DesvíoStandard
+0: 20000
+1: 20000
+2: 20000
+3: 20000
+4: 20000
+Muestras de entrenamiento: 70000
+Muestras de test: 30000
+Precision de test: 8.88 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0 6004    0    0    0
+   1 | 3050 2343  472   63   35
+   2 | 3165 2514  226   88   28
+   3 | 3397 2298  295   40   11
+   4 | 2681 2985  249    0   56
+
+Listas real/predicción: 30000/30000
+Precisión: 8.88%
+
+Inicio: 22/5/2022 22:59:50 | Fin: 22/5/2022 23:01:56
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 00:46:37
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 8423 | Total: 30000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 20000
+1: 20000
+2: 20000
+3: 20000
+4: 20000
+Muestras de entrenamiento: 70000
+Muestras de test: 30000
+Precision de test: 28.08 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 | 6010    0    0    0    0
+   1 | 3650 1722   27  343  304
+   2 | 3681 1325   16  533  412
+   3 | 4518  876   10  439  213
+   4 | 4358  915    8  404  236
+
+Listas real/predicción: 30000/30000
+Precisión: 28.08%
+
+Inicio: 23/5/2022 00:46:37 | Fin: 23/5/2022 00:48:25
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 01:06:56
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 5257 | Total: 30000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Mediana
+0: 20000
+1: 20000
+2: 20000
+3: 20000
+4: 20000
+Muestras de entrenamiento: 70000
+Muestras de test: 30000
+Precision de test: 17.52 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0    0 6030    0    0
+   1 |   97    3 4136  123 1597
+   2 |   38   15 4267  213 1509
+   3 |   29    0 4944   77  885
+   4 |  100    4 4944   79  910
+
+Listas real/predicción: 30000/30000
+Precisión: 17.52%
+
+Inicio: 23/5/2022 01:06:56 | Fin: 23/5/2022 01:08:47
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 01:11:19
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 7015 | Total: 30000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q3
+0: 20000
+1: 20000
+2: 20000
+3: 20000
+4: 20000
+Muestras de entrenamiento: 70000
+Muestras de test: 30000
+Precision de test: 23.38 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 | 5331    0    0    0  715
+   1 | 3860  106   55 1221  695
+   2 | 3802  153   14 1280  756
+   3 | 3736  234   13  952 1123
+   4 | 4409  138   23  772  612
+
+Listas real/predicción: 30000/30000
+Precisión: 23.38%
+
+Inicio: 23/5/2022 01:11:19 | Fin: 23/5/2022 01:13:15
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 01:24:23
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 9572 | Total: 45000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Media
+0: 30000
+1: 30000
+2: 30000
+3: 30000
+4: 30000
+Muestras de entrenamiento: 105000
+Muestras de test: 45000
+Precision de test: 21.27 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0 8745    0   43  248
+   1 |   14 6905 1283  608   82
+   2 |    0 6339 1811  751   87
+   3 |    0 6681 1453  799  144
+   4 |    0 6659 1294  997   57
+
+Listas real/predicción: 45000/45000
+Precisión: 21.27%
+
+Inicio: 23/5/2022 01:24:23 | Fin: 23/5/2022 01:27:13
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 01:30:30
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 6816 | Total: 45000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su DesvíoStandard
+0: 30000
+1: 30000
+2: 30000
+3: 30000
+4: 30000
+Muestras de entrenamiento: 105000
+Muestras de test: 45000
+Precision de test: 15.15 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0 9022    0   31    0
+   1 | 1589 2123  315 4707  280
+   2 | 1823 2187  144 4509  347
+   3 | 1500 2278  240 4467  591
+   4 | 1363 2375  399 4628   82
+
+Listas real/predicción: 45000/45000
+Precisión: 15.15%
+
+Inicio: 23/5/2022 01:30:30 | Fin: 23/5/2022 01:33:28
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 01:36:43
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 9788 | Total: 45000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 30000
+1: 30000
+2: 30000
+3: 30000
+4: 30000
+Muestras de entrenamiento: 105000
+Muestras de test: 45000
+Precision de test: 21.75 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0    0    0    0 8974
+   1 |  173 1105  354   64 7397
+   2 |  148  652  520   31 7678
+   3 |  170  416  185   14 8153
+   4 |   59  475  241   42 8149
+
+Listas real/predicción: 45000/45000
+Precisión: 21.75%
+
+Inicio: 23/5/2022 01:36:43 | Fin: 23/5/2022 01:39:11
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 01:46:53
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 9859 | Total: 45000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Mediana
+0: 30000
+1: 30000
+2: 30000
+3: 30000
+4: 30000
+Muestras de entrenamiento: 105000
+Muestras de test: 45000
+Precision de test: 21.91 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 |    0    0    0 9031    0
+   1 |   93  132 2494 6143   66
+   2 |  134  107 2229 6416   72
+   3 |   28  120 1343 7493   25
+   4 |   24  120 1501 7424    5
+
+Listas real/predicción: 45000/45000
+Precisión: 21.91%
+
+Inicio: 23/5/2022 01:46:53 | Fin: 23/5/2022 01:49:56
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 01:52:42
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 13411 | Total: 45000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q3
+0: 30000
+1: 30000
+2: 30000
+3: 30000
+4: 30000
+Muestras de entrenamiento: 105000
+Muestras de test: 45000
+Precision de test: 29.8 % de acierto
+
+Matriz de confusión
+===================
+     |    0    1    2    3    4
+   0 | 6791    0    0    0 2200
+   1 | 1477  189 1327 1874 4188
+   2 | 2059  406 1155 1804 3545
+   3 | 3518  366 1084 1391 2598
+   4 | 2408  470 1262 1003 3885
+
+Listas real/predicción: 45000/45000
+Precisión: 29.8%
+
+Inicio: 23/5/2022 01:52:42 | Fin: 23/5/2022 01:55:48
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 02:02:43
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 11532 | Total: 75000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Media
+0: 50000
+1: 50000
+2: 50000
+3: 50000
+4: 50000
+Muestras de entrenamiento: 175000
+Muestras de test: 75000
+Precision de test: 15.38 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 14931     0     0     0
+    1 |  2488  9363  1803   541  1012
+    2 |  2164  9924  1268   555  1107
+    3 |  2338 10532  1026   228   899
+    4 |  1849 10964   732   603   673
+
+Listas real/predicción: 75000/75000
+Precisión: 15.38%
+
+Inicio: 23/5/2022 02:02:43 | Fin: 23/5/2022 02:07:25
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 02:13:07
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 15584 | Total: 75000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su DesvíoStandard
+0: 50000
+1: 50000
+2: 50000
+3: 50000
+4: 50000
+Muestras de entrenamiento: 175000
+Muestras de test: 75000
+Precision de test: 20.78 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0     0 12929  2156
+    1 |   761  3386  3502  5025  2343
+    2 |   855  4124  2543  3965  3306
+    3 |   434  3537  2896  5163  2922
+    4 |   253  3160  2741  4507  4492
+
+Listas real/predicción: 75000/75000
+Precisión: 20.78%
+
+Inicio: 23/5/2022 02:13:07 | Fin: 23/5/2022 02:18:04
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 02:31:31
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 14725 | Total: 75000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Mediana
+0: 50000
+1: 50000
+2: 50000
+3: 50000
+4: 50000
+Muestras de entrenamiento: 175000
+Muestras de test: 75000
+Precision de test: 19.63 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0  4309     0     0 10872
+    1 |   106  7240   571  2313  4773
+    2 |    76  7151   580  2014  5116
+    3 |   124  6662   136  1572  6485
+    4 |   153  8007   252  1155  5333
+
+Listas real/predicción: 75000/75000
+Precisión: 19.63%
+
+Inicio: 23/5/2022 02:31:31 | Fin: 23/5/2022 02:36:55
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 02:43:42
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 13498 | Total: 75000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q3
+0: 50000
+1: 50000
+2: 50000
+3: 50000
+4: 50000
+Muestras de entrenamiento: 175000
+Muestras de test: 75000
+Precision de test: 18 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 15093     0     0     0
+    1 |   807 12398    97   230  1325
+    2 |   623 12408   101   241  1598
+    3 |   757 12981   218   211   892
+    4 |   554 13521   126    31   788
+
+Listas real/predicción: 75000/75000
+Precisión: 18%
+
+Inicio: 23/5/2022 02:43:42 | Fin: 23/5/2022 02:49:41
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 03:04:05
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 14635 | Total: 75000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 50000
+1: 50000
+2: 50000
+3: 50000
+4: 50000
+Muestras de entrenamiento: 175000
+Muestras de test: 75000
+Precision de test: 19.51 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 12324     0  2692     0
+    1 |   623  9569  1777  2092   951
+    2 |   755  9959  1468  2170   606
+    3 |   365 10023   817  3108   715
+    4 |   488 10639   781  2588   490
+
+Listas real/predicción: 75000/75000
+Precisión: 19.51%
+
+Inicio: 23/5/2022 03:04:05 | Fin: 23/5/2022 03:08:29
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 03:13:03
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 19615 | Total: 120000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Media
+0: 80000
+1: 80000
+2: 80000
+3: 80000
+4: 80000
+Muestras de entrenamiento: 280000
+Muestras de test: 120000
+Precision de test: 16.35 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 23877     0     0
+    1 |  4998   842 16749    80  1257
+    2 |  4302   989 17654    49   966
+    3 |  3146  1030 19049   158   749
+    4 |  2671   559 19832    82   961
+
+Listas real/predicción: 120000/120000
+Precisión: 16.35%
+
+Inicio: 23/5/2022 03:13:03 | Fin: 23/5/2022 03:21:35
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 03:43:26
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 26731 | Total: 120000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su DesvíoStandard
+0: 80000
+1: 80000
+2: 80000
+3: 80000
+4: 80000
+Muestras de entrenamiento: 280000
+Muestras de test: 120000
+Precision de test: 22.28 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0     0     0 23934
+    1 |   318  5976  3987  4520  9123
+    2 |   152  3504  3075  7047 10059
+    3 |   380  4474  4783  6317  8437
+    4 |  1041  3637  2621  5252 11363
+
+Listas real/predicción: 120000/120000
+Precisión: 22.28%
+
+Inicio: 23/5/2022 03:43:26 | Fin: 23/5/2022 03:51:38
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 04:07:15
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 18453 | Total: 120000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Mediana
+0: 80000
+1: 80000
+2: 80000
+3: 80000
+4: 80000
+Muestras de entrenamiento: 280000
+Muestras de test: 120000
+Precision de test: 15.38 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 23844     0     0     0
+    1 |  3325 15736  2066     0  2757
+    2 |  3114 16420  1149     0  3461
+    3 |  1760 19116  1491     0  1747
+    4 |  2303 19017  1126     0  1568
+
+Listas real/predicción: 120000/120000
+Precisión: 15.38%
+
+Inicio: 23/5/2022 04:07:15 | Fin: 23/5/2022 04:16:35
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 10:57:36
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 23764 | Total: 120000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 80000
+1: 80000
+2: 80000
+3: 80000
+4: 80000
+Muestras de entrenamiento: 280000
+Muestras de test: 120000
+Precision de test: 19.8 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 24037     0     0
+    1 |   726  6545 16853     3    11
+    2 |   659  6103 17216     0    49
+    3 |   370  5388 18263     0    37
+    4 |   572  4718 18447     0     3
+
+Listas real/predicción: 120000/120000
+Precisión: 19.8%
+
+Inicio: 23/5/2022 10:57:36 | Fin: 23/5/2022 11:04:56
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 11:32:00
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 22178 | Total: 120000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q3
+0: 80000
+1: 80000
+2: 80000
+3: 80000
+4: 80000
+Muestras de entrenamiento: 280000
+Muestras de test: 120000
+Precision de test: 18.48 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 23124     0    14   826
+    1 |   313 11531  1865  8184  2090
+    2 |   191 13776  1866  5887  2443
+    3 |   229 13442  1317  5715  3286
+    4 |   338 14274  1238  4985  3066
+
+Listas real/predicción: 120000/120000
+Precisión: 18.48%
+
+Inicio: 23/5/2022 11:32:00 | Fin: 23/5/2022 11:40:08
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 11:47:33
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 27821 | Total: 180000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Media
+0: 120000
+1: 120000
+2: 120000
+3: 120000
+4: 120000
+Muestras de entrenamiento: 420000
+Muestras de test: 180000
+Precision de test: 15.46 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 35864     0     0
+    1 |  9277  3370 21631  1279   437
+    2 |  6542  4929 22730  1267   808
+    3 |  7683  2636 23631  1155   809
+    4 |  5726  2404 26114  1142   566
+
+Listas real/predicción: 180000/180000
+Precisión: 15.46%
+
+Inicio: 23/5/2022 11:47:33 | Fin: 23/5/2022 11:59:20
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 12:14:15
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 44331 | Total: 180000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 120000
+1: 120000
+2: 120000
+3: 120000
+4: 120000
+Muestras de entrenamiento: 420000
+Muestras de test: 180000
+Precision de test: 24.63 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 | 36157     0     0     0     0
+    1 | 27119  5962  1143    55  1878
+    2 | 27743  4769  1208   379  1699
+    3 | 30792  3921   551    47   933
+    4 | 30545  3859   279     4   957
+
+Listas real/predicción: 180000/180000
+Precisión: 24.63%
+
+Inicio: 23/5/2022 12:14:15 | Fin: 23/5/2022 12:23:31
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 12:32:29
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 31367 | Total: 180000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Mediana
+0: 120000
+1: 120000
+2: 120000
+3: 120000
+4: 120000
+Muestras de entrenamiento: 420000
+Muestras de test: 180000
+Precision de test: 17.43 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 36049     0     0
+    1 |  3407  6669 25706     0   138
+    2 |  4943  6276 24686     0    43
+    3 |  5536  4079 26564     0     0
+    4 |  4468  3400 28003    21    12
+
+Listas real/predicción: 180000/180000
+Precisión: 17.43%
+
+Inicio: 23/5/2022 12:32:29 | Fin: 23/5/2022 12:45:49
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 13:20:36
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 22404 | Total: 180000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q3
+0: 120000
+1: 120000
+2: 120000
+3: 120000
+4: 120000
+Muestras de entrenamiento: 420000
+Muestras de test: 180000
+Precision de test: 12.45 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 36088     0     0     0
+    1 | 14139 21178   565    28     0
+    2 | 12479 21955  1226   546     0
+    3 | 10613 23935  1421     0     0
+    4 | 10196 24778   840    13     0
+
+Listas real/predicción: 180000/180000
+Precisión: 12.45%
+
+Inicio: 23/5/2022 13:20:36 | Fin: 23/5/2022 13:33:14
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 14:20:14
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 56579 | Total: 180000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su DesvíoStandard
+0: 120000
+1: 120000
+2: 120000
+3: 120000
+4: 120000
+Muestras de entrenamiento: 420000
+Muestras de test: 180000
+Precision de test: 31.43 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 | 35865    18     0     0    94
+    1 | 14803  1021  7912  5724  6487
+    2 | 10958  3697  6555  7122  7760
+    3 | 13263   933  7509  5931  8485
+    4 | 16925  1553  5642  4536  7207
+
+Listas real/predicción: 180000/180000
+Precisión: 31.43%
+
+Inicio: 23/5/2022 14:20:14 | Fin: 23/5/2022 14:31:54
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 14:48:04
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 46981 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Media
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 20.88 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0     0     0 45093
+    1 |   418   609  9899  9085 24904
+    2 |   167   122  9191  7193 28369
+    3 |    84   423  8330  6265 29997
+    4 |   288   273  5444  7930 30916
+
+Listas real/predicción: 225000/225000
+Precisión: 20.88%
+
+Inicio: 23/5/2022 14:48:04 | Fin: 23/5/2022 14:59:09
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 15:15:19
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 38426 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 17.08 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 44931     0     0
+    1 |  5001  1552  9534 27165  2052
+    2 |  4892  1207  8913 28323  1714
+    3 |  2766   516 13153 26931  1432
+    4 |  2622   819 13295 27152  1030
+
+Listas real/predicción: 225000/225000
+Precisión: 17.08%
+
+Inicio: 23/5/2022 15:15:19 | Fin: 23/5/2022 15:26:25
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 15:44:49
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 39457 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Mediana
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 17.54 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 45018     0     0     0
+    1 |    93 31536  3582   114  9821
+    2 |   435 31728  1939    38 10724
+    3 |    98 36490  1388   114  6981
+    4 |   195 36863  1594   381  5868
+
+Listas real/predicción: 225000/225000
+Precisión: 17.54%
+
+Inicio: 23/5/2022 15:44:49 | Fin: 23/5/2022 15:59:07
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 16:28:29
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 40780 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q3
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 18.12 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 45084     0     0
+    1 |  3546  2318 32582  6169   366
+    2 |  2950  2433 34159  5092   139
+    3 |  2160  2944 35541  4074   321
+    4 |  1468  2086 37794  3545   229
+
+Listas real/predicción: 225000/225000
+Precisión: 18.12%
+
+Inicio: 23/5/2022 16:28:29 | Fin: 23/5/2022 16:44:03
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 17:10:27
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 44603 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q1
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 19.82 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0     0     0 45128
+    1 |  2178  1566  3718  3494 33916
+    2 |  2783  2953  2777  3036 33596
+    3 |  1658   902  2072  1677 38537
+    4 |  1297  1727  1905  1497 38583
+
+Listas real/predicción: 225000/225000
+Precisión: 19.82%
+
+Inicio: 23/5/2022 17:10:27 | Fin: 23/5/2022 17:22:08
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 17:39:07
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 42857 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Mediana
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 19.05 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 44911     0     0
+    1 |   187  2653 35261  6744    35
+    2 |    62  3867 35719  5580    22
+    3 |   385  1403 38867  4485     0
+    4 |   200  1214 39894  3511     0
+
+Listas real/predicción: 225000/225000
+Precisión: 19.05%
+
+Inicio: 23/5/2022 17:39:07 | Fin: 23/5/2022 17:53:15
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 18:07:01
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 34880 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su Q3
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 15.5 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 44964     0     0     0
+    1 |  6427 29521    55  4218  4709
+    2 |  6836 30203   857  3872  3297
+    3 |  7043 32711     0  2710  2491
+    4 |  4637 35330    69  3258  1792
+
+Listas real/predicción: 225000/225000
+Precisión: 15.5%
+
+Inicio: 23/5/2022 18:07:01 | Fin: 23/5/2022 18:24:14
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 20:44:50
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 45109 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su DesvíoStandard
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 20.05 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0 44947    47     0     0
+    1 |   637 18509 10142 15720     0
+    2 |  1238 17306 10202 16090     0
+    3 |  1011 17637  9970 16398     0
+    4 |   209 23253  8693 12991     0
+
+Listas real/predicción: 225000/225000
+Precisión: 20.05%
+
+Inicio: 23/5/2022 20:44:50 | Fin: 23/5/2022 20:56:51
+
+
+*************************************************
+
+Inicio de entrenamiento: 23/5/2022 22:17:42
+===========================================
+
+Carga, preprocesamiento de datos y entrenamiento
+================================================
+
+Resultados Test
+===============
+Correct: 43683 | Total: 225000
+
+> Conteo por label
+Remapeo a label 0 con valores de muestra menores a su DesvíoStandard
+0: 150000
+1: 150000
+2: 150000
+3: 150000
+4: 150000
+Muestras de entrenamiento: 525000
+Muestras de test: 225000
+Precision de test: 19.41 % de acierto
+
+Matriz de confusión
+===================
+      |     0     1     2     3     4
+    0 |     0     0 44816     0     0
+    1 |   160  4398 23344 13892  3343
+    2 |   147  5306 21716 15655  1900
+    3 |    20  5310 22266 15932  1642
+    4 |    64  5091 27560 10801  1637
+
+Listas real/predicción: 225000/225000
+Precisión: 19.41%
+
+Inicio: 23/5/2022 22:17:42 | Fin: 23/5/2022 22:37:23

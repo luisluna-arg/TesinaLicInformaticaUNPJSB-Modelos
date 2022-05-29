@@ -7,7 +7,32 @@ const { sampleNormalization } = require('./data-preprocessing');
 /* ////////////////////////////////////////////////// */
 /* ////////////////////////////////////////////////// */
 
-const logFilePath = './Logs.txt';
+
+const tiposRemapeo = {
+    mean: "media",
+    std: "desvío standard",
+    q1: "Q1",
+    median: "Mediana",
+    q3: "Q3"
+};
+const comparacionesRemapeo = {
+    menor: "menores",
+    mayor: "mayores"
+};
+const tipoRemapeo = tiposRemapeo.q3;
+const comparacionRemapeo = comparacionesRemapeo.menor;
+
+let samplesPerLabel = 150000;
+const maxPrecision = 1;
+let precision = 0;
+const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}-${samplesPerLabel}/`;
+const DataSetExportPath = ExportBasePath + 'decisiontree-data.csv';
+const PreProcessedDataSetExportPath = ExportBasePath + 'decisiontree-preprocessed-data.csv';
+const SettingsExportPath = ExportBasePath + 'decisiontree-settings.json';
+
+const logFilePath = `./Logs-${tipoRemapeo}.txt`;
+
+
 
 const blankPad = (num, places) => String(num).padStart(places, ' ');
 
@@ -53,29 +78,6 @@ function printConfusionMatrix(predictionLabels, realLabels) {
     printLogs(``);
 }
 
-const tiposRemapeo = {
-    mean: "media",
-    std: "desvío standard",
-    q1: "Q1",
-    median: "Mediana",
-    q3: "Q3"
-};
-
-const comparacionesRemapeo = {
-    menor: "menores",
-    mayor: "mayores"
-};
-
-const tipoRemapeo = tiposRemapeo.q3;
-const comparacionRemapeo = comparacionesRemapeo.menor;
-
-let samplesPerLabel = 4000;
-const maxPrecision = 1;
-let precision = 0;
-const ExportBasePath = `./data/trained-model/remapeo-${comparacionRemapeo}-${tipoRemapeo}/`;
-const DataSetExportPath = ExportBasePath + 'decisiontree-data.csv';
-const PreProcessedDataSetExportPath = ExportBasePath + 'decisiontree-preprocessed-data.csv';
-const SettingsExportPath = ExportBasePath + 'decisiontree-settings.json';
 
 MiscUtils.mkdir(ExportBasePath);
 
