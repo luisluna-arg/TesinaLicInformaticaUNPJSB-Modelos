@@ -6,3 +6,4 @@ RegresionLogistica/js/load-training-json.bk.js
 IGNORE_*.*
 IGNORE_*/
 JavaScript/decisionTree/fft.js
+JavaScript/*/node_modules/
